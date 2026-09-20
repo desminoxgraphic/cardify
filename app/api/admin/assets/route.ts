@@ -11,7 +11,7 @@ const MIME_EXTENSIONS: Record<string, string> = {
 const BUSINESS_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
-  if (!isAdminAuthenticated()) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  if (!(await isAdminAuthenticated())) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   if (!supabaseServer) return NextResponse.json({ error: 'Database storage is not configured.' }, { status: 503 });
 
   try {

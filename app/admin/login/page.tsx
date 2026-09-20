@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Lock, Loader2 } from 'lucide-react';
+
+const LOGIN_TIMEOUT_MS = 12000;
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,27 +14,56 @@ export default function AdminLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
     setLoading(true);
 
-    try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Invalid admin password.');
-        setLoading(false);
+    try {
+      let res: Response;
+      try {
+        res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setError('Login request timed out. Please try again.');
+        } else {
+          setError('Unable to reach the login service. Please try again.');
+        }
+        return;
+      }
+
+      let data: { success?: boolean; error?: string } | null = null;
+      try {
+        if (res.headers.get('content-type')?.includes('application/json')) {
+          data = await res.json();
+        }
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok || !data?.success) {
+        setError(data?.error || 'Login failed. Please try again.');
         return;
       }
 
       router.push('/admin');
       router.refresh();
+      window.setTimeout(() => {
+        if (window.location.pathname === '/admin/login') {
+          window.location.href = '/admin';
+        }
+      }, 1200);
     } catch (err) {
       setError('An error occurred during login.');
+    } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -60,6 +90,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-sm"
             />
           </div>
