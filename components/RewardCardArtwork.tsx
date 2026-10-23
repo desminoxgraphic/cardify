@@ -22,6 +22,7 @@ const VIEW_H = 757;
 const PAD = 72;
 const CONTENT_RIGHT = VIEW_W - PAD;
 
+// System fonts only: the SVG is also rasterised to PNG, where web fonts are unavailable.
 const SANS_FAMILY = `-apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`;
 const MONO_FAMILY = `'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace`;
 
@@ -49,6 +50,14 @@ function initialsFor(name: string) {
   return value.toUpperCase() || 'CB';
 }
 
+function Label({ x, y, anchor = 'start', fg, children }: { x: number; y: number; anchor?: 'start' | 'middle' | 'end'; fg: string; children: React.ReactNode }) {
+  return (
+    <text x={x} y={y} textAnchor={anchor} fontFamily={SANS_FAMILY} fontSize="15" fontWeight="700" fill={fg} fillOpacity="0.62" letterSpacing="3">
+      {children}
+    </text>
+  );
+}
+
 export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
   business,
   reward,
@@ -58,22 +67,24 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
 }) => {
   const primaryColor = normalizeHexColor(business.primary_color);
   const fg = getContrastTextColor(primaryColor);
-  const gradientEnd = shadeColor(primaryColor, 0.78);
+  const lightText = fg === '#FFFFFF';
+  const gradientEnd = shadeColor(primaryColor, lightText ? 0.3 : 0.8);
   const logoToRender = logoDataUrl !== undefined ? logoDataUrl : business.logo_url;
   const initials = useMemo(() => initialsFor(business.name), [business.name]);
 
   const customerName = (reward.customer_name || 'CUSTOMER').trim().toUpperCase();
   const discountLabel = `${reward.discount_percentage}% OFF`;
 
-  const nameFit = fitText(business.name, 660, 40, 22, 0.56);
-  const discountFit = fitText(discountLabel, 1000, 122, 64, 0.52);
-  const customerFit = fitText(customerName, 1000, 56, 34, 0.56);
+  const nameFit = fitText(business.name, 720, 40, 22, 0.56);
+  const discountFit = fitText(discountLabel, 1040, 128, 64, 0.55);
+  const customerFit = fitText(customerName, 1040, 48, 30, 0.62);
+  const phoneFit = fitText(reward.customer_phone, 360, 32, 20, 0.6);
 
-  const pillText = 'NEXT VISIT';
-  const pillTextWidth = pillText.length * 0.62 * 16 + (pillText.length - 1) * 3.4;
-  const pillWidth = Math.ceil(pillTextWidth) + 56;
+  const pillText = 'NEXT VISIT · ONE USE';
+  const pillWidth = Math.ceil(pillText.length * 0.62 * 16 + (pillText.length - 1) * 3) + 52;
   const pillHeight = 46;
-  const pillY = 434;
+  const pillX = PAD + 150;
+  const pillY = 233;
 
   return (
     <svg
@@ -83,59 +94,70 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
       role="img"
-      aria-label={`${business.name} reward card`}
+      aria-label={`${business.name} reward card, ${discountLabel}, card number ${formatSerialNumber(reward.serial_number)}`}
     >
       <defs>
         <linearGradient id="rewardCardBgGrad" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor={primaryColor} />
           <stop offset="100%" stopColor={gradientEnd} />
         </linearGradient>
-        <radialGradient id="rewardCardGlow" cx="0.92" cy="0.04" r="0.68">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.16" />
+        <linearGradient id="rewardCardSheen" x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
+          <stop offset="45%" stopColor="#FFFFFF" stopOpacity="0.04" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </radialGradient>
+        </linearGradient>
+        <linearGradient id="rewardCardChip" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F7E2A6" />
+          <stop offset="50%" stopColor="#C9A250" />
+          <stop offset="100%" stopColor="#F1D48A" />
+        </linearGradient>
+        <linearGradient id="rewardCardRim" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.05" />
+        </linearGradient>
+        <clipPath id="rewardCardClip">
+          <rect width={VIEW_W} height={VIEW_H} rx="44" />
+        </clipPath>
         <clipPath id="rewardCardLogoClip">
-          <rect x={PAD} y="66" width="104" height="104" rx="28" />
+          <rect x={PAD} y="64" width="100" height="100" rx="26" />
         </clipPath>
       </defs>
 
-      <rect width={VIEW_W} height={VIEW_H} rx="44" fill="url(#rewardCardBgGrad)" />
-      <rect width={VIEW_W} height={VIEW_H} rx="44" fill="url(#rewardCardGlow)" />
-      <rect x="3" y="3" width={VIEW_W - 6} height={VIEW_H - 6} rx="41" fill="none" stroke={fg} strokeOpacity="0.14" strokeWidth="3" />
+      <g clipPath="url(#rewardCardClip)">
+        <rect width={VIEW_W} height={VIEW_H} fill="url(#rewardCardBgGrad)" />
 
-      <circle cx="1130" cy="688" r="248" fill={fg} fillOpacity="0.03" />
+        {/* Signal arcs motif */}
+        <g fill="none" stroke={fg} strokeOpacity="0.07" strokeWidth="2">
+          {[180, 270, 360, 450, 540, 630].map((r) => (
+            <circle key={r} cx={VIEW_W + 40} cy={VIEW_H + 40} r={r} />
+          ))}
+        </g>
+        <path d={`M0 0 H${VIEW_W * 0.72} L${VIEW_W * 0.38} ${VIEW_H} H0 Z`} fill="url(#rewardCardSheen)" />
+      </g>
+      <rect x="2" y="2" width={VIEW_W - 4} height={VIEW_H - 4} rx="42" fill="none" stroke="url(#rewardCardRim)" strokeWidth="3" />
 
       {/* Logo (business initials underlay, real logo overlay when available) */}
-      <rect x={PAD} y="66" width="104" height="104" rx="28" fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.22" strokeWidth="2" />
-      <text
-        x="124"
-        y="133"
-        textAnchor="middle"
-        fontFamily={SANS_FAMILY}
-        fontSize="42"
-        fontWeight="800"
-        fill={fg}
-        fillOpacity="0.9"
-        letterSpacing="0.5"
-      >
+      <rect x={PAD} y="64" width="100" height="100" rx="26" fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.24" strokeWidth="2" />
+      <text x={PAD + 50} y="129" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="40" fontWeight="800" fill={fg} fillOpacity="0.9" letterSpacing="0.5">
         {initials}
       </text>
       {logoToRender && (
         <image
           href={logoToRender}
           x={PAD}
-          y="66"
-          width="104"
-          height="104"
+          y="64"
+          width="100"
+          height="100"
           preserveAspectRatio="xMidYMid meet"
           clipPath="url(#rewardCardLogoClip)"
         />
       )}
 
-      {/* Business name */}
+      {/* Business name + card type */}
       <text
         x={PAD + 124}
-        y="136"
+        y="112"
         fontFamily={SANS_FAMILY}
         fontSize={nameFit.fontSize}
         fontWeight="800"
@@ -146,38 +168,34 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
       >
         {business.name}
       </text>
+      <Label x={PAD + 126} y={148} fg={fg}>REWARD CARD</Label>
 
-      {/* Created date (top right) */}
-      <text
-        x={CONTENT_RIGHT}
-        y="96"
-        textAnchor="end"
-        fontFamily={SANS_FAMILY}
-        fontSize="16"
-        fontWeight="700"
-        fill={fg}
-        fillOpacity="0.6"
-        letterSpacing="3"
-      >
-        CREATED
-      </text>
-      <text
-        x={CONTENT_RIGHT}
-        y="140"
-        textAnchor="end"
-        fontFamily={SANS_FAMILY}
-        fontSize="28"
-        fontWeight="800"
-        fill={fg}
-        letterSpacing="1.5"
-      >
-        {formatDate(reward.created_at)}
+      {/* Contactless mark (top right) */}
+      <g transform={`translate(${CONTENT_RIGHT - 52} 72)`} fill="none" stroke={fg} strokeOpacity="0.85" strokeWidth="6" strokeLinecap="round">
+        <path d="M8 14 a30 30 0 0 1 0 52" />
+        <path d="M24 4 a46 46 0 0 1 0 72" />
+        <path d="M40 -6 a62 62 0 0 1 0 92" />
+      </g>
+
+      {/* Chip */}
+      <g transform={`translate(${PAD} 214)`}>
+        <rect width="118" height="86" rx="16" fill="url(#rewardCardChip)" />
+        <g fill="none" stroke="#8A6A2A" strokeOpacity="0.55" strokeWidth="2.5">
+          <rect x="38" y="18" width="42" height="50" rx="9" />
+          <path d="M0 30 H38 M0 56 H38 M80 30 H118 M80 56 H118 M59 0 V18 M59 68 V86" />
+        </g>
+      </g>
+
+      {/* NEXT VISIT pill */}
+      <rect x={pillX} y={pillY} width={pillWidth} height={pillHeight} rx={pillHeight / 2} fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.24" strokeWidth="1.5" />
+      <text x={pillX + 26} y={pillY + pillHeight / 2 + 6} fontFamily={SANS_FAMILY} fontSize="16" fontWeight="800" fill={fg} fillOpacity="0.9" letterSpacing="3">
+        {pillText}
       </text>
 
       {/* Hero: discount */}
       <text
-        x={PAD}
-        y="312"
+        x={PAD - 4}
+        y="438"
         fontFamily={SANS_FAMILY}
         fontSize={discountFit.fontSize}
         fontWeight="900"
@@ -189,102 +207,52 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
         {discountLabel}
       </text>
 
-      {/* Hero: customer name */}
+      {/* Cardholder */}
+      <Label x={PAD} y={494} fg={fg}>CARDHOLDER</Label>
       <text
         x={PAD}
-        y="412"
+        y="544"
         fontFamily={SANS_FAMILY}
         fontSize={customerFit.fontSize}
         fontWeight="800"
         fill={fg}
-        letterSpacing="0.5"
+        letterSpacing="2"
         textLength={customerFit.textLength}
         lengthAdjust={customerFit.textLength ? 'spacingAndGlyphs' : undefined}
       >
         {customerName}
       </text>
 
-      {/* NEXT VISIT pill */}
-      <rect x={PAD} y={pillY} width={pillWidth} height={pillHeight} rx={pillHeight / 2} fill={fg} fillOpacity="0.1" stroke={fg} strokeOpacity="0.2" strokeWidth="1.5" />
-      <text
-        x={PAD + 28}
-        y={pillY + pillHeight / 2 + 6}
-        fontFamily={SANS_FAMILY}
-        fontSize="16"
-        fontWeight="800"
-        fill={fg}
-        fillOpacity="0.85"
-        letterSpacing="3.4"
-      >
-        {pillText}
-      </text>
-
       {/* Divider */}
-      <line x1={PAD} y1="520" x2={CONTENT_RIGHT} y2="520" stroke={fg} strokeOpacity="0.18" strokeWidth="2" />
+      <line x1={PAD} y1="590" x2={CONTENT_RIGHT} y2="590" stroke={fg} strokeOpacity="0.2" strokeWidth="2" />
 
-      {/* Bottom left: card number */}
-      <text
-        x={PAD}
-        y="572"
-        fontFamily={SANS_FAMILY}
-        fontSize="15"
-        fontWeight="700"
-        fill={fg}
-        fillOpacity="0.6"
-        letterSpacing="3"
-      >
-        CARD NO.
-      </text>
-      <text
-        x={PAD + 1}
-        y="630"
-        fontFamily={MONO_FAMILY}
-        fontSize="40"
-        fontWeight="800"
-        fill={fg}
-        letterSpacing="2"
-      >
+      {/* Bottom row: card number / phone / issued */}
+      <Label x={PAD} y={634} fg={fg}>CARD NO.</Label>
+      <text x={PAD} y="684" fontFamily={MONO_FAMILY} fontSize="38" fontWeight="800" fill={fg} letterSpacing="2">
         #{formatSerialNumber(reward.serial_number)}
       </text>
 
-      {/* Bottom right: phone + validity */}
+      <Label x={430} y={634} fg={fg}>PHONE</Label>
       <text
-        x={CONTENT_RIGHT}
-        y="572"
-        textAnchor="end"
+        x={430}
+        y="680"
         fontFamily={SANS_FAMILY}
-        fontSize="15"
-        fontWeight="700"
-        fill={fg}
-        fillOpacity="0.6"
-        letterSpacing="3"
-      >
-        PHONE
-      </text>
-      <text
-        x={CONTENT_RIGHT}
-        y="622"
-        textAnchor="end"
-        fontFamily={SANS_FAMILY}
-        fontSize="34"
+        fontSize={phoneFit.fontSize}
         fontWeight="800"
         fill={fg}
         letterSpacing="1"
+        textLength={phoneFit.textLength}
+        lengthAdjust={phoneFit.textLength ? 'spacingAndGlyphs' : undefined}
       >
         {reward.customer_phone}
       </text>
-      <text
-        x={CONTENT_RIGHT}
-        y="668"
-        textAnchor="end"
-        fontFamily={SANS_FAMILY}
-        fontSize="15"
-        fontWeight="600"
-        fill={fg}
-        fillOpacity="0.6"
-        letterSpacing="0.5"
-      >
-        Valid for one use
+
+      <Label x={CONTENT_RIGHT} y={634} anchor="end" fg={fg}>ISSUED</Label>
+      <text x={CONTENT_RIGHT} y="680" textAnchor="end" fontFamily={SANS_FAMILY} fontSize="28" fontWeight="800" fill={fg} letterSpacing="1.5">
+        {formatDate(reward.created_at)}
+      </text>
+      <text x={CONTENT_RIGHT} y="716" textAnchor="end" fontFamily={SANS_FAMILY} fontSize="15" fontWeight="700" fill={fg} fillOpacity="0.55" letterSpacing="1">
+        boostov.ma
       </text>
     </svg>
   );

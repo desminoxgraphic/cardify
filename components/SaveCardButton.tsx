@@ -57,12 +57,16 @@ interface SaveCardButtonProps {
   business: Business | PublicBusiness;
   reward: Reward;
   svgId?: string;
+  buttonClassName?: string;
+  buttonStyle?: React.CSSProperties;
 }
 
 export const SaveCardButton: React.FC<SaveCardButtonProps> = ({
   business,
   reward,
   svgId = 'cardify-reward-svg',
+  buttonClassName = 'w-full bg-[#2563EB] hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md disabled:opacity-75 text-base',
+  buttonStyle,
 }) => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -157,7 +161,8 @@ export const SaveCardButton: React.FC<SaveCardButtonProps> = ({
         type="button"
         onClick={handleDownload}
         disabled={saving}
-        className="w-full bg-[#2563EB] hover:bg-blue-700 active:scale-[0.98] text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md disabled:opacity-75 text-base"
+        className={buttonClassName}
+        style={buttonStyle}
       >
         {saving ? (
           <>
