@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
 
 const LOGIN_TIMEOUT_MS = 12000;
 
@@ -72,10 +73,8 @@ export default function AdminLoginPage() {
     <div className="min-h-dvh flex items-center justify-center p-4 bg-[#F8FAFC]">
       <div className="w-full max-w-sm bg-white rounded-3xl p-8 shadow-xl border border-[#E2E8F0]">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#2563EB]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#2563EB]">
-            <Lock className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">CARDIFY Admin</h1>
+          <Image src="/boostov-logo.png" alt="boostov.ma logo" width={64} height={64} priority className="mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-[#0F172A]">boostov.ma Admin</h1>
           <p className="text-xs text-[#64748B] mt-1">Management Portal</p>
         </div>
 

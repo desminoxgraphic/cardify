@@ -10,6 +10,7 @@ module.exports = {
       colors: {
         brand: {
           blue: '#2563EB',
+          cyan: '#0EA5E9',
           navy: '#0F172A',
           bg: '#F8FAFC',
           secondary: '#64748B',
@@ -19,7 +20,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
     },
   },

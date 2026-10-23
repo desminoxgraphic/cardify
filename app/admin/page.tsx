@@ -117,11 +117,9 @@ export default function AdminDashboardPage() {
       <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#2563EB] text-white flex items-center justify-center font-black text-lg">
-              C
-            </div>
+            <Image src="/boostov-logo.png" alt="boostov.ma logo" width={40} height={40} priority />
             <div>
-              <h1 className="text-lg font-bold text-[#0F172A] leading-tight">CARDIFY Admin</h1>
+              <h1 className="text-lg font-bold text-[#0F172A] leading-tight">boostov.ma Admin</h1>
               <p className="text-xs text-[#64748B]">Businesses & NFC Management</p>
             </div>
           </div>

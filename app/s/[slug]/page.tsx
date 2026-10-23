@@ -230,7 +230,7 @@ export default function CustomerExperiencePage() {
           </h1>
           <p className="text-sm text-[#64748B]">
             {error === 'Database not configured.'
-              ? 'Cardify needs its Supabase environment variables before this store can load.'
+              ? 'boostov.ma needs its Supabase environment variables before this store can load.'
               : 'This store page is currently inactive or does not exist.'}
           </p>
         </div>
@@ -276,7 +276,7 @@ export default function CustomerExperiencePage() {
               <div className="h-24 w-full" style={{ background: `linear-gradient(135deg, ${primaryColor}, #0F172A)` }} />
             )}
             <div className="p-6 sm:p-8 flex flex-col items-center">
-            {/* BUSINESS LOGO (or Business Initial Fallback, NEVER Cardify logo) */}
+            {/* BUSINESS LOGO (or Business Initial Fallback, NEVER the boostov.ma logo) */}
             <div className="w-20 h-20 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] p-2 flex items-center justify-center mb-5 shadow-sm overflow-hidden">
               {business.logo_url ? (
                 <Image
@@ -514,10 +514,10 @@ export default function CustomerExperiencePage() {
         )}
       </div>
 
-      {/* FOOTER - Cardify appears ONLY as subtle label */}
+      {/* FOOTER - boostov.ma appears ONLY as subtle label */}
       <footer className="w-full text-center pt-6 pb-2">
         <p className="text-xs text-[#64748B] font-medium tracking-wide">
-          Powered by <span className="font-bold text-[#0F172A]">Cardify</span>
+          Powered by <span className="font-bold text-[#0F172A]">boostov<span className="text-[#2563EB]">.ma</span></span>
         </p>
       </footer>
     </main>
