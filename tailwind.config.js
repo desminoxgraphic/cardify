@@ -7,6 +7,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        // Small-height phones (e.g. 360x640) and phones with the keyboard open
+        short: { raw: '(max-height: 700px)' },
+      },
       colors: {
         brand: {
           blue: '#2563EB',

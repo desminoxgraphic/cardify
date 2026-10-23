@@ -145,6 +145,34 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 2px 0 rgba(15, 23, 42, 0.06), 0 12px 24px -16px rgba(15, 23, 42, 0.35);
 }
 
+/* Card reveal: back face first, then flip to the front */
+.bv-flip { transform-style: preserve-3d; animation: bv-flip 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.bv-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.bv-face-back { transform: rotateY(180deg); }
+.bv-particle {
+  position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 3px;
+  animation: bv-particle 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.bv-pop-in { animation: bv-pop-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.bv-glow-pulse { animation: bv-glow-pulse 1.6s ease-out 2; }
+
+@keyframes bv-flip {
+  0% { opacity: 0; transform: rotateY(180deg) translateY(36px) scale(0.84); }
+  25% { opacity: 1; transform: rotateY(180deg) translateY(0) scale(0.94); }
+  100% { opacity: 1; transform: rotateY(360deg) translateY(0) scale(1); }
+}
+@keyframes bv-particle {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(0.4); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(var(--d, -90px)) scale(1) rotate(160deg); }
+}
+@keyframes bv-pop-in {
+  0% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes bv-glow-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.65); }
+  100% { box-shadow: 0 0 0 18px rgba(251, 191, 36, 0); }
+}
 @keyframes bv-sway {
   0%, 100% { transform: rotateX(7deg) rotateY(-12deg) translateY(0); }
   50% { transform: rotateX(3deg) rotateY(-4deg) translateY(-6px); }
@@ -196,7 +224,11 @@
   .bv-shine,
   .bv-float,
   .bv-sway,
-  .bv-shadow-breathe {
+  .bv-shadow-breathe,
+  .bv-flip,
+  .bv-particle,
+  .bv-pop-in,
+  .bv-glow-pulse {
     animation: none !important;
   }
   .bv-3d-tilt { transition: none; }

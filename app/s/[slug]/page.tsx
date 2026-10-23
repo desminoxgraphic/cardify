@@ -7,15 +7,15 @@ import { RewardCard } from '@/components/RewardCard';
 import { SaveCardButton } from '@/components/SaveCardButton';
 import { PublicBusiness, Reward } from '@/lib/types';
 import { getBrandTheme, withAlpha } from '@/lib/brand-theme';
+import { formatDate } from '@/lib/utils';
 import { RewardPreviewCard } from '@/components/RewardPreviewCard';
 import { Card3D } from '@/components/Card3D';
 import { Star3D } from '@/components/Star3D';
+import { Symbol3D, type SymbolKind } from '@/components/Symbol3D';
 import {
-  Star,
   Share2,
   ArrowRight,
   ArrowLeft,
-  Gift,
   Check,
   Loader2,
   PenLine,
@@ -23,6 +23,8 @@ import {
   Phone,
   Store,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -39,6 +41,21 @@ export default function CustomerExperiencePage() {
   // Visual-only star picker on the review step; nothing is stored or sent.
   const [rating, setRating] = useState(0);
   const [ratingTick, setRatingTick] = useState(0);
+
+  // Presentation-only: flip-reveal the card the first time it appears after creation.
+  const [revealCard, setRevealCard] = useState(false);
+  const prevStepRef = useRef<Step>(1);
+  const revealDoneRef = useRef(false);
+  useEffect(() => {
+    if (prevStepRef.current === 4 && step === 5 && !revealDoneRef.current) {
+      revealDoneRef.current = true;
+      setRevealCard(true);
+      const timer = window.setTimeout(() => setRevealCard(false), 2400);
+      prevStepRef.current = step;
+      return () => window.clearTimeout(timer);
+    }
+    prevStepRef.current = step;
+  }, [step]);
 
   // Form State (Screen 4)
   const [customerName, setCustomerName] = useState('');
@@ -227,7 +244,7 @@ export default function CustomerExperiencePage() {
 
   const theme = getBrandTheme(business?.primary_color);
   const stageStyle: React.CSSProperties = {
-    background: `radial-gradient(120% 60% at 90% 0%, rgba(255,255,255,0.20), transparent 55%), radial-gradient(90% 55% at 0% 100%, rgba(0,0,0,0.35), transparent 60%), linear-gradient(165deg, ${theme.deep} 0%, ${theme.dark} 100%)`,
+    background: `radial-gradient(120% 55% at 85% 0%, rgba(255,255,255,0.22), transparent 55%), radial-gradient(90% 50% at 0% 100%, rgba(0,0,0,0.35), transparent 60%), linear-gradient(170deg, ${theme.deep} 0%, ${theme.dark} 100%)`,
   };
   const neutralStageStyle: React.CSSProperties = {
     background: 'radial-gradient(120% 60% at 90% 0%, rgba(255,255,255,0.12), transparent 55%), linear-gradient(165deg, #1E293B 0%, #0B1120 100%)',
@@ -236,21 +253,24 @@ export default function CustomerExperiencePage() {
   // Loading Screen
   if (loading) {
     return (
-      <main className="relative min-h-dvh flex flex-col text-white" aria-busy="true" aria-label="Loading store">
+      <main className="relative min-h-svh flex flex-col text-white" aria-busy="true" aria-label="Loading store">
         <Stage style={neutralStageStyle} />
         <div className="relative mx-auto w-full max-w-[440px] flex-1 flex flex-col">
-          <div className="px-5 pt-4"><div className="h-11 rounded-full bg-white/10 animate-pulse" /></div>
-          <div className="flex-1 px-6 flex flex-col justify-center gap-4">
-            <div className="w-24 h-24 rounded-[28px] bg-white/15 animate-pulse" />
+          <div className="px-4 pt-[max(12px,env(safe-area-inset-top))]"><div className="h-11 rounded-full bg-white/10 animate-pulse" /></div>
+          <div className="flex-1 px-5 flex flex-col justify-center gap-4">
+            <div className="h-44 rounded-[28px] bg-white/10 animate-pulse" />
             <div className="h-9 w-4/5 rounded-xl bg-white/15 animate-pulse" />
             <div className="h-4 w-1/2 rounded-full bg-white/10 animate-pulse" />
           </div>
-          <Sheet>
+          <Sheet
+            footer={
+              <div className="h-[60px] rounded-[20px] bg-slate-100 flex items-center justify-center gap-2 text-sm font-semibold text-[#64748B]">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading store...
+              </div>
+            }
+          >
             <div className="grid grid-cols-3 gap-2.5">
               {[0, 1, 2].map((i) => <div key={i} className="h-24 rounded-[20px] bg-slate-100 animate-pulse" />)}
-            </div>
-            <div className="mt-5 h-[60px] rounded-[20px] bg-slate-100 flex items-center justify-center gap-2 text-sm font-semibold text-[#64748B]">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading store...
             </div>
           </Sheet>
         </div>
@@ -261,7 +281,7 @@ export default function CustomerExperiencePage() {
   // Not Found / Disabled Screen
   if (error || !business) {
     return (
-      <main className="relative min-h-dvh flex flex-col text-white overflow-x-hidden">
+      <main className="relative min-h-svh flex flex-col text-white">
         <Stage style={neutralStageStyle} />
         <div className="relative mx-auto w-full max-w-[440px] flex-1 flex flex-col">
           <div className="flex-1 px-6 flex flex-col justify-center bv-hero-in">
@@ -277,16 +297,19 @@ export default function CustomerExperiencePage() {
                 : 'This store page is currently inactive or does not exist.'}
             </p>
           </div>
-          <Sheet>
-            <PoweredBy />
-          </Sheet>
+          <Sheet footer={<span />}>{null}</Sheet>
         </div>
       </main>
     );
   }
 
-  const canGoBack = step > 1 && step < 5;
   const initials = getInitials(business.name);
+  const stepNames = ['Thank you', 'Review', 'Share', 'Details', 'Reward'];
+  // Back/forward are always shown. Step 5 is reachable only once a card exists.
+  const canReach = (n: number) => n >= 1 && n <= 5 && (n < 5 || !!reward);
+  const goTo = (n: number) => {
+    if (canReach(n)) updateStep(n as Step);
+  };
 
   const primaryButton =
     'bv-btn3d w-full min-h-[60px] text-white font-bold px-6 rounded-[20px] flex items-center justify-center gap-2.5 text-[17px] hover:brightness-110 disabled:opacity-70';
@@ -297,10 +320,10 @@ export default function CustomerExperiencePage() {
   } as React.CSSProperties;
   const darkStyle = { background: 'linear-gradient(180deg, #1E293B -30%, #0B1020 100%)', '--bv-edge': '#000000' } as React.CSSProperties;
   const ghostButton =
-    'bv-press w-full min-h-[52px] rounded-[18px] text-[15px] font-semibold text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] flex items-center justify-center gap-1.5 transition-colors';
+    'bv-press w-full min-h-[48px] rounded-[16px] text-[15px] font-semibold text-[#475569] hover:bg-slate-50 hover:text-[#0F172A] flex items-center justify-center gap-1.5 transition-colors';
 
-  const logoTile = (sizeClass: string, textClass: string, rounded = 'rounded-[28px]') => (
-    <div className={`${sizeClass} ${rounded} relative bg-gradient-to-b from-white to-slate-200 p-1.5 shadow-[0_3px_0_rgba(0,0,0,0.25),0_22px_40px_-12px_rgba(0,0,0,0.6),inset_0_1px_0_#fff] ring-4 ring-white/15 overflow-hidden shrink-0`}>
+  const logoTile = (sizeClass: string, textClass: string, rounded = 'rounded-[24px]') => (
+    <div className={`${sizeClass} ${rounded} relative bg-gradient-to-b from-white to-slate-200 p-1.5 shadow-[0_3px_0_rgba(0,0,0,0.25),0_22px_40px_-12px_rgba(0,0,0,0.6),inset_0_1px_0_#fff] ring-4 ring-white/20 overflow-hidden shrink-0`}>
       {business.logo_url ? (
         <Image src={business.logo_url} alt={`${business.name} logo`} width={112} height={112} className="w-full h-full object-contain rounded-[inherit]" />
       ) : (
@@ -311,182 +334,254 @@ export default function CustomerExperiencePage() {
     </div>
   );
 
-  const ratingHint = rating > 0
-    ? `Choose ${rating} star${rating > 1 ? 's' : ''} again on Google to post it.`
-    : `Tap the stars to rate ${business.name}.`;
+  const ratingWords = ['Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+
+  // Per-step decorative 3D symbols on the stage (hidden on short screens so they never crowd content)
+  const stageSymbols: Record<Step, { kind: SymbolKind; className: string; delay?: string }[]> = {
+    1: [],
+    2: [
+      { kind: 'star', className: 'top-[76px] -end-7 w-24 rotate-[14deg]' },
+      { kind: 'sparkle', className: 'top-[150px] start-4 w-9', delay: '1.4s' },
+    ],
+    3: [
+      { kind: 'heart', className: 'top-[78px] -end-5 w-20 rotate-[12deg]' },
+      { kind: 'sparkle', className: 'top-[120px] start-5 w-8', delay: '0.8s' },
+    ],
+    4: [{ kind: 'sparkle', className: 'top-[80px] end-6 w-9', delay: '0.4s' }],
+    5: [{ kind: 'sparkle', className: 'top-[80px] end-6 w-9', delay: '0.4s' }],
+  };
+
+  const cardHolderPreview = reward ? reward.customer_name : customerName;
 
   return (
-    <main className="relative min-h-dvh flex flex-col text-white overflow-x-hidden">
-      <Stage style={business.cover_image_url && step === 1 ? undefined : stageStyle} coverUrl={step === 1 ? business.cover_image_url : null} coverAlt={`${business.name} storefront`} overlayStyle={stageStyle} />
+    <main className="relative min-h-svh flex flex-col text-white overflow-x-clip">
+      <Stage style={stageStyle} />
+      {/* Step symbols */}
+      <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden short:hidden">
+        <div className="relative mx-auto max-w-[440px] h-full">
+          {stageSymbols[step].map((symbol, i) => (
+            <div key={`${step}-${i}`} className={`absolute ${symbol.className} bv-pop-in`} style={{ animationDelay: `${120 + i * 120}ms` }}>
+              <div className="bv-float" style={{ animationDelay: symbol.delay }}>
+                <Symbol3D kind={symbol.kind} className="w-full h-auto drop-shadow-[0_14px_18px_rgba(0,0,0,0.35)]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="relative mx-auto w-full max-w-[440px] flex-1 flex flex-col">
-        {/* TOP BAR: back + segmented progress */}
-        <header className="relative z-10 flex items-center gap-3 px-5 pt-[max(16px,env(safe-area-inset-top))]">
-          {canGoBack && (
+        {/* TOP BAR: back · progress · forward (always visible) */}
+        <header className="sticky top-0 z-30 px-4 pt-[max(12px,env(safe-area-inset-top))] pb-2">
+          <nav className="flex items-center gap-2" aria-label="Steps">
             <button
               type="button"
-              onClick={() => updateStep((step - 1) as Step)}
-              aria-label="Go back to the previous step"
-              className="bv-glass bv-press w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 hover:bg-white/25"
+              onClick={() => goTo(step - 1)}
+              disabled={!canReach(step - 1)}
+              aria-label={step > 1 ? `Back to ${stepNames[step - 2]}` : 'Back'}
+              className="bv-glass bv-press w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 hover:bg-white/25 disabled:opacity-35 disabled:pointer-events-none"
             >
-              <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+              <ChevronLeft className="w-5 h-5 rtl:rotate-180" />
             </button>
-          )}
-          <div
-            className="bv-glass flex-1 h-11 rounded-full flex items-center gap-1.5 px-4"
-            role="progressbar"
-            aria-valuemin={1}
-            aria-valuemax={5}
-            aria-valuenow={step}
-            aria-label={`Step ${step} of 5`}
-          >
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span
-                key={i}
-                className="h-1.5 rounded-full transition-all duration-500 ease-out"
-                style={{ flexGrow: i === step ? 2.2 : 1, flexBasis: 0, backgroundColor: i <= step ? '#FFFFFF' : 'rgba(255,255,255,0.28)' }}
-              />
-            ))}
-            <span className="ms-2 text-xs font-bold text-white/90 tabular-nums">{step}/5</span>
-          </div>
+            <div
+              className="bv-glass flex-1 h-11 rounded-full flex items-center gap-1.5 px-4 min-w-0"
+              role="progressbar"
+              aria-valuemin={1}
+              aria-valuemax={5}
+              aria-valuenow={step}
+              aria-label={`Step ${step} of 5: ${stepNames[step - 1]}`}
+            >
+              {[1, 2, 3, 4, 5].map((i) => (
+                <span
+                  key={i}
+                  className="h-1.5 rounded-full transition-all duration-500 ease-out"
+                  style={{ flexGrow: i === step ? 2.4 : 1, flexBasis: 0, backgroundColor: i <= step ? '#FFFFFF' : 'rgba(255,255,255,0.28)' }}
+                />
+              ))}
+              <span className="ms-2 text-xs font-bold text-white/90 tabular-nums">{step}/5</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => goTo(step + 1)}
+              disabled={!canReach(step + 1)}
+              aria-label={step < 5 ? `Forward to ${stepNames[step]}` : 'Forward'}
+              title={step === 4 && !reward ? 'Create your card first' : undefined}
+              className="bv-glass bv-press w-11 h-11 rounded-full flex items-center justify-center text-white shrink-0 hover:bg-white/25 disabled:opacity-35 disabled:pointer-events-none"
+            >
+              <ChevronRight className="w-5 h-5 rtl:rotate-180" />
+            </button>
+          </nav>
         </header>
 
-        {/* STEP 1: THANK YOU */}
+        {/* ───────── STEP 1: THANK YOU ───────── */}
         {step === 1 && (
           <>
-            <section key="hero-1" className="flex-1 flex flex-col justify-center px-6 pt-6 pb-10 [@media(max-height:780px)]:pt-3 [@media(max-height:780px)]:pb-7">
-              <div className="bv-hero-in">
-                <div className="flex items-center gap-3.5">
-                  {logoTile('w-16 h-16 [@media(max-height:780px)]:w-12 [@media(max-height:780px)]:h-12', 'text-xl', 'rounded-[20px]')}
-                  <p className="text-xs font-bold tracking-[0.22em] uppercase text-white/75">Thank you</p>
-                </div>
-                <h1 className="mt-5 [@media(max-height:780px)]:mt-3 text-[38px] max-[370px]:text-[32px] leading-[1.02] font-extrabold tracking-[-0.03em] text-balance">
-                  Thanks for visiting {business.name} ❤️
-                </h1>
-                <p className="mt-3 text-base text-white/75">We appreciate your support.</p>
+            <section key="hero-1" className="flex-1 flex flex-col justify-center px-5 pt-2 pb-7 short:pb-5">
+              <div className="relative bv-hero-in">
+                {business.cover_image_url ? (
+                  // Store photo shown whole and uncovered (no text on top) so it stays legible.
+                  <div className="relative w-full h-[clamp(150px,30svh,250px)] short:h-[clamp(130px,24svh,170px)] rounded-[28px] overflow-hidden ring-1 ring-white/25 shadow-[0_28px_50px_-22px_rgba(0,0,0,0.75)] bg-black/20">
+                    <Image src={business.cover_image_url} alt={`${business.name} storefront`} fill priority sizes="(max-width: 440px) 100vw, 440px" className="object-cover object-center" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+                  </div>
+                ) : (
+                  <div className="relative h-[clamp(150px,28svh,230px)] short:h-[clamp(120px,22svh,160px)] flex items-center justify-center">
+                    <div aria-hidden className="absolute w-[70%] aspect-square rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.22),transparent)]" />
+                    <div className="bv-float relative w-[clamp(110px,22svh,170px)] short:w-[clamp(96px,18svh,120px)]">
+                      <Symbol3D kind="heart" className="w-full h-auto drop-shadow-[0_24px_30px_rgba(0,0,0,0.45)]" />
+                    </div>
+                    <div aria-hidden className="absolute top-[12%] end-[16%] w-9 bv-float" style={{ animationDelay: '0.9s' }}>
+                      <Symbol3D kind="sparkle" className="w-full h-auto" />
+                    </div>
+                    <div aria-hidden className="absolute bottom-[14%] start-[18%] w-6 bv-float" style={{ animationDelay: '1.7s' }}>
+                      <Symbol3D kind="sparkle" className="w-full h-auto" />
+                    </div>
+                  </div>
+                )}
+                <div className="absolute -bottom-9 start-4">{logoTile('w-[84px] h-[84px] short:w-[68px] short:h-[68px]', 'text-2xl')}</div>
+                {business.cover_image_url && (
+                  <div aria-hidden className="absolute -bottom-[58px] end-2 w-[52px] bv-float">
+                    <Symbol3D kind="heart" className="w-full h-auto drop-shadow-[0_14px_18px_rgba(0,0,0,0.45)]" />
+                  </div>
+                )}
               </div>
 
-              {/* 3D reward teaser */}
-              <div className="mt-9 px-3 mx-auto w-full max-w-[360px] [@media(max-height:780px)]:mt-7 [@media(max-height:780px)]:max-w-[270px] bv-card-reveal [@media(max-height:640px)]:hidden" style={{ animationDelay: '120ms' }}>
-                <Card3D
-                  satellites={
-                    <>
-                      <div aria-hidden className="absolute -top-4 right-[16%]" style={{ transform: 'translateZ(70px)' }}>
-                        <div className="bv-float w-14 h-14 rounded-[18px] bg-white flex items-center justify-center shadow-[0_3px_0_rgba(0,0,0,0.18),0_18px_30px_-10px_rgba(0,0,0,0.55)]">
-                          <Star3D filled className="w-9 h-9" />
-                        </div>
-                      </div>
-                      <div aria-hidden className="absolute -right-4 bottom-[22%]" style={{ transform: 'translateZ(90px)' }}>
-                        <div className="bv-float w-14 h-14 rounded-[18px] bg-white flex items-center justify-center shadow-[0_3px_0_rgba(0,0,0,0.18),0_18px_30px_-10px_rgba(0,0,0,0.55)]" style={{ animationDelay: '1.2s' }}>
-                          <Image src="/google-maps-logo.png" alt="" width={34} height={34} />
-                        </div>
-                      </div>
-                    </>
-                  }
-                >
-                  <RewardPreviewCard
-                    businessName={business.name}
-                    logoUrl={business.logo_url}
-                    initials={initials}
-                    color={business.primary_color}
-                    discount={business.discount_percentage}
-                    holderName=""
-                  />
-                </Card3D>
+              <div className="mt-12 short:mt-11 bv-hero-in" style={{ animationDelay: '80ms' }}>
+                <p className="text-xs font-bold tracking-[0.22em] uppercase text-white/75">Thank you</p>
+                <h1 className="mt-2 text-[clamp(30px,9.6vw,42px)] short:text-[clamp(26px,8vw,32px)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance break-words">
+                  Thanks for visiting {business.name} ❤️
+                </h1>
+                <p className="mt-2.5 text-base text-white/80">We appreciate your support.</p>
               </div>
             </section>
 
-            <Sheet>
-              <ol className="grid grid-cols-[1fr_1fr_1.2fr] gap-2.5 [@media(max-height:780px)]:[&>li]:py-2.5" aria-label="What happens next">
-                <li className="bv-tile3d rounded-[20px] bg-gradient-to-b from-amber-50 to-amber-100/60 border border-amber-100 p-3">
-                  <div className="flex text-amber-400" aria-hidden>
-                    {[0, 1, 2].map((i) => <Star3D key={i} filled className="w-[18px] h-[18px]" />)}
-                  </div>
-                  <p className="mt-3 text-[13px] font-bold">Review</p>
-                  <p className="text-[11px] text-[#64748B] leading-snug">on Google Maps</p>
-                </li>
-                <li className="bv-tile3d rounded-[20px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3">
-                  <div className="flex -space-x-1.5 rtl:space-x-reverse" aria-hidden>
-                    {[0.25, 0.45, 0.7].map((a) => (
-                      <span key={a} className="w-5 h-5 rounded-full ring-2 ring-white flex items-center justify-center" style={{ background: withAlpha(theme.deep, a) }}>
-                        <User className="w-3 h-3 text-white" />
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-[13px] font-bold">Share</p>
-                  <p className="text-[11px] text-[#64748B] leading-snug">with friends</p>
-                </li>
-                <li className="relative rounded-[20px] p-3 text-white overflow-hidden shadow-[0_3px_0_rgba(0,0,0,0.25),0_14px_24px_-14px_rgba(0,0,0,0.6)]" style={{ background: `linear-gradient(140deg, ${theme.deep}, ${theme.dark})` }}>
-                  <div aria-hidden className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.2),transparent_50%)]" />
-                  <p className="relative text-[10px] font-bold tracking-[0.18em] text-white/70">REWARD</p>
-                  <p className="relative mt-1.5 text-[26px] leading-none font-extrabold tracking-tight">
-                    {business.discount_percentage}%<span className="text-xs font-bold"> OFF</span>
-                  </p>
-                  <p className="relative mt-1 text-[11px] text-white/70">next visit</p>
-                </li>
+            <Sheet
+              footer={
+                <button onClick={() => goTo(2)} style={primaryStyle} className={primaryButton}>
+                  <span>Continue</span>
+                  <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+                </button>
+              }
+            >
+              <ol className="grid grid-cols-3 gap-2.5" aria-label="What happens next">
+                {[
+                  { kind: 'star' as const, title: 'Review', text: 'on Google Maps' },
+                  { kind: 'heart' as const, title: 'Share', text: 'with friends' },
+                  { kind: 'ticket' as const, title: `${business.discount_percentage}% OFF`, text: 'next visit' },
+                ].map((item, index) => (
+                  <li
+                    key={item.kind}
+                    className={`bv-tile3d relative rounded-[20px] border p-3 short:p-2.5 ${
+                      index === 2 ? 'text-white border-transparent' : 'bg-gradient-to-b from-white to-slate-100 border-slate-100'
+                    }`}
+                    style={index === 2 ? { background: `linear-gradient(150deg, ${theme.deep}, ${theme.dark})` } : undefined}
+                  >
+                    <span className={`absolute top-2 end-2.5 text-[10px] font-extrabold ${index === 2 ? 'text-white/60' : 'text-[#94A3B8]'}`}>0{index + 1}</span>
+                    <div className="w-11 h-11 short:w-9 short:h-9 -ms-0.5">
+                      <Symbol3D kind={item.kind} className="w-full h-auto" />
+                    </div>
+                    <p className={`mt-1.5 text-[14px] font-extrabold leading-tight ${index === 2 ? '' : 'text-[#0F172A]'}`}>{item.title}</p>
+                    <p className={`text-[11px] leading-snug ${index === 2 ? 'text-white/70' : 'text-[#64748B]'}`}>{item.text}</p>
+                  </li>
+                ))}
               </ol>
-
-              <button onClick={() => updateStep(2)} style={primaryStyle} className={`${primaryButton} mt-5`}>
-                <span>Continue</span>
-                <ArrowRight className="w-5 h-5 rtl:rotate-180" />
-              </button>
-              <PoweredBy />
             </Sheet>
           </>
         )}
 
-        {/* STEP 2: GOOGLE REVIEW */}
+        {/* ───────── STEP 2: GOOGLE REVIEW ───────── */}
         {step === 2 && (
           <>
-            <section key="hero-2" className="flex-1 flex flex-col justify-center items-center text-center px-6 py-7 [@media(max-height:780px)]:py-3 bv-hero-in">
+            <section key="hero-2" className="flex-1 flex flex-col justify-center items-center text-center px-4 pt-2 pb-7 short:pb-4 bv-hero-in">
               <div className="bv-float">
-                <div className="w-[72px] h-[72px] [@media(max-height:780px)]:w-[58px] [@media(max-height:780px)]:h-[58px] rounded-[24px] bg-gradient-to-b from-white to-slate-200 flex items-center justify-center shadow-[0_4px_0_rgba(0,0,0,0.22),0_22px_36px_-12px_rgba(0,0,0,0.6),inset_0_1px_0_#fff] [transform:perspective(500px)_rotateX(10deg)]">
-                  <Image src="/google-maps-logo.png" alt="Google Maps logo" width={44} height={44} />
+                <div className="w-16 h-16 short:w-12 short:h-12 rounded-[22px] short:rounded-[16px] bg-gradient-to-b from-white to-slate-200 flex items-center justify-center shadow-[0_4px_0_rgba(0,0,0,0.22),0_22px_36px_-12px_rgba(0,0,0,0.6),inset_0_1px_0_#fff]">
+                  <Image src="/google-maps-logo.png" alt="Google Maps logo" width={40} height={40} className="w-[62%] h-auto" />
                 </div>
               </div>
-              <h1 className="mt-5 [@media(max-height:780px)]:mt-3 text-[34px] max-[370px]:text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em]">
+              <h1 className="mt-4 short:mt-3 text-[clamp(28px,8.6vw,36px)] short:text-[26px] leading-[1.05] font-extrabold tracking-[-0.03em]">
                 How was your<br />experience?
               </h1>
 
-              {/* Tap-to-rate stars (visual guide; the rating itself is chosen on Google) */}
-              <div className="mt-7 [@media(max-height:780px)]:mt-4 bv-glass rounded-[26px] px-3 py-3 flex justify-center gap-0.5 shadow-[0_24px_40px_-20px_rgba(0,0,0,0.6)]" role="radiogroup" aria-label="Your rating">
+              {/* HERO: big tap-to-rate stars (visual guide; the rating itself is chosen on Google) */}
+              <div
+                className="mt-5 short:mt-3 w-full bv-glass rounded-[30px] px-2 py-3 short:py-2 flex justify-between shadow-[0_24px_40px_-20px_rgba(0,0,0,0.6)]"
+                role="radiogroup"
+                aria-label="Your rating"
+              >
                 {[1, 2, 3, 4, 5].map((value) => {
                   const filled = value <= rating;
+                  const isTapped = rating === value;
                   return (
                     <button
                       key={value}
                       type="button"
                       role="radio"
-                      aria-checked={rating === value}
+                      aria-checked={isTapped}
                       aria-label={`${value} star${value > 1 ? 's' : ''}`}
                       onClick={() => {
                         setRating(value);
                         setRatingTick((t) => t + 1);
+                        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(12);
                       }}
-                      className="relative w-[58px] h-[58px] max-[370px]:w-[52px] max-[370px]:h-[52px] flex items-center justify-center rounded-2xl"
+                      className="relative flex-1 aspect-square max-w-[72px] flex items-center justify-center rounded-2xl active:scale-90 transition-transform"
                     >
-                      {filled && rating === value && (
-                        <span key={`burst-${ratingTick}`} aria-hidden className="absolute inset-1 rounded-full border-2 border-amber-300 bv-burst" />
+                      {isTapped && (
+                        <span key={`fx-${ratingTick}`} aria-hidden className="absolute inset-0">
+                          <span className="absolute inset-1 rounded-full border-2 border-amber-300 bv-burst" />
+                          {[0, 45, 90, 135, 180, 225, 270, 315].map((a, i) => (
+                            <span
+                              key={a}
+                              className="bv-particle"
+                              style={{ '--a': `${a}deg`, '--d': '-46px', width: 7, height: 7, margin: '-3.5px 0 0 -3.5px', background: i % 2 ? '#FDE68A' : '#FFFFFF' } as React.CSSProperties}
+                            />
+                          ))}
+                        </span>
                       )}
                       <span
                         key={filled ? `on-${ratingTick}` : 'off'}
-                        className={filled ? 'bv-pop' : ''}
-                        style={filled ? { animationDelay: `${(value - 1) * 45}ms` } : undefined}
+                        className={`block w-[88%] ${filled ? 'bv-pop' : ''}`}
+                        style={filled ? { animationDelay: `${(value - 1) * 50}ms` } : undefined}
                       >
-                        <Star3D
-                          filled={filled}
-                          className={`block w-12 h-12 max-[370px]:w-11 max-[370px]:h-11 ${filled ? 'drop-shadow-[0_8px_14px_rgba(245,158,11,0.5)]' : ''}`}
-                        />
+                        <Star3D filled={filled} className={`block w-full h-auto ${filled ? 'drop-shadow-[0_8px_14px_rgba(245,158,11,0.55)]' : ''}`} />
                       </span>
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-sm text-white/80 min-h-[20px]" aria-live="polite">{ratingHint}</p>
+              <div className="mt-3 min-h-[50px] short:min-h-[44px]" aria-live="polite">
+                {rating > 0 ? (
+                  <>
+                    <p key={`w-${ratingTick}`} className="text-[22px] short:text-lg font-extrabold leading-tight bv-pop-in">{ratingWords[rating - 1]}</p>
+                    <p className="text-sm text-white/80">Choose {rating} star{rating > 1 ? 's' : ''} again on Google to post it.</p>
+                  </>
+                ) : (
+                  <p className="text-[15px] text-white/80 pt-2">Tap a star to rate {business.name}.</p>
+                )}
+              </div>
             </section>
 
-            <Sheet>
-              <ol className="relative space-y-4" aria-label="How to post your review">
+            <Sheet
+              footer={
+                <>
+                  <button
+                    key={rating > 0 ? `cta-${ratingTick}` : 'cta'}
+                    onClick={handleGoogleReviewClick}
+                    className={`${primaryButton} ${rating > 0 ? 'bv-glow-pulse' : ''}`}
+                    style={darkStyle}
+                  >
+                    <span className="w-8 h-8 rounded-[10px] bg-white flex items-center justify-center shrink-0">
+                      <Image src="/google-maps-logo.png" alt="" width={20} height={20} />
+                    </span>
+                    <span>Leave a Google Review</span>
+                  </button>
+                  <button onClick={() => goTo(3)} className={`${ghostButton} mt-1`}>
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                  </button>
+                </>
+              }
+            >
+              {/* 3-step guide: vertical on normal phones, compact row on short screens */}
+              <ol className="relative space-y-3.5 short:hidden" aria-label="How to post your review">
                 <span aria-hidden className="absolute start-5 top-5 bottom-5 w-px bg-slate-200" />
                 {[
                   { title: 'Rate', text: 'Pick your stars', icon: <Star3D filled className="w-5 h-5" /> },
@@ -496,217 +591,293 @@ export default function CustomerExperiencePage() {
                   <li key={item.title} className="relative flex items-center gap-3.5">
                     <span className="bv-tile3d relative z-10 w-10 h-10 rounded-full bg-gradient-to-b from-white to-slate-100 border border-slate-200 flex items-center justify-center shrink-0">{item.icon}</span>
                     <div className="min-w-0">
-                      <p className="text-[15px] font-bold leading-tight">{index + 1}. {item.title}</p>
+                      <p className="text-[15px] font-bold leading-tight text-[#0F172A]">{index + 1}. {item.title}</p>
                       <p className="text-[13px] text-[#64748B]">{item.text}</p>
                     </div>
                   </li>
                 ))}
               </ol>
-
-              <button
-                onClick={handleGoogleReviewClick}
-                className={`${primaryButton} mt-6`}
-                style={darkStyle}
-              >
-                <span className="w-8 h-8 rounded-[10px] bg-white flex items-center justify-center shrink-0">
-                  <Image src="/google-maps-logo.png" alt="" width={20} height={20} />
-                </span>
-                <span>Leave a Google Review</span>
-              </button>
-              <button onClick={() => updateStep(3)} className={`${ghostButton} mt-2`}>
-                <span>Continue</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-              </button>
-              <PoweredBy compact />
+              <ol className="hidden short:grid grid-cols-3 gap-2" aria-label="How to post your review">
+                {[
+                  { title: 'Rate', icon: <Star3D filled className="w-4 h-4" /> },
+                  { title: 'Write', icon: <PenLine className="w-4 h-4 text-[#2563EB]" /> },
+                  { title: 'Post', icon: <Image src="/google-maps-logo.png" alt="" width={16} height={16} /> },
+                ].map((item, index) => (
+                  <li key={item.title} className="flex items-center gap-1.5 rounded-xl bg-slate-50 border border-slate-100 px-2 py-2 text-[13px] font-bold text-[#0F172A]">
+                    {item.icon}
+                    <span>{index + 1}. {item.title}</span>
+                  </li>
+                ))}
+              </ol>
             </Sheet>
           </>
         )}
 
-        {/* STEP 3: SHARE WITH 3 FRIENDS */}
+        {/* ───────── STEP 3: SHARE WITH 3 FRIENDS ───────── */}
         {step === 3 && (
           <>
-            <section key="hero-3" className="flex-1 flex flex-col justify-center items-center text-center px-6 py-7 bv-hero-in">
-              {/* Illustration: the store at the centre of three friends */}
-              <div aria-hidden className="relative w-[230px] h-[190px]">
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 230 190" fill="none">
-                  <circle cx="115" cy="95" r="88" stroke="white" strokeOpacity="0.14" />
-                  <circle cx="115" cy="95" r="60" stroke="white" strokeOpacity="0.2" strokeDasharray="3 5" />
-                  {[[34, 40], [196, 52], [112, 176]].map(([x, y]) => (
-                    <line key={`${x}-${y}`} x1="115" y1="95" x2={x} y2={y} stroke="white" strokeOpacity="0.35" strokeDasharray="2 5" strokeLinecap="round" />
-                  ))}
-                </svg>
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">{logoTile('w-[84px] h-[84px]', 'text-2xl', 'rounded-[26px]')}</div>
+            <section key="hero-3" className="flex-1 flex flex-col justify-center items-center text-center px-5 pt-2 pb-7 short:pb-4 bv-hero-in">
+              {/* 3D composition: gift from the store travelling to three friends */}
+              <div aria-hidden className="relative w-[min(80vw,310px)] h-[clamp(170px,30svh,240px)] short:h-[clamp(140px,26svh,170px)]">
+                <div className="absolute inset-[8%] rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.22),transparent)]" />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[44%] short:w-[38%]">
+                  <div className="bv-float">
+                    <Symbol3D kind="gift" className="w-full h-auto drop-shadow-[0_26px_30px_rgba(0,0,0,0.5)]" />
+                  </div>
+                  <div className="absolute -bottom-2 -end-5 short:-end-3">{logoTile('w-12 h-12 short:w-10 short:h-10', 'text-xs', 'rounded-[14px]')}</div>
+                </div>
                 {[
-                  { pos: 'left-[12px] top-[18px]', delay: '0ms' },
-                  { pos: 'right-[12px] top-[30px]', delay: '700ms' },
-                  { pos: 'left-[90px] bottom-[-8px]', delay: '1400ms' },
+                  { pos: 'start-[2%] top-[6%]', size: 'w-14 h-14 short:w-11 short:h-11', delay: '0s' },
+                  { pos: 'end-[0%] top-[30%]', size: 'w-12 h-12 short:w-10 short:h-10', delay: '0.7s' },
+                  { pos: 'start-[8%] bottom-[2%]', size: 'w-11 h-11 short:w-9 short:h-9', delay: '1.4s' },
                 ].map((friend, i) => (
                   <div key={i} className={`absolute ${friend.pos}`}>
                     <div className="bv-float" style={{ animationDelay: friend.delay }}>
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-b from-white to-slate-200 shadow-[0_3px_0_rgba(0,0,0,0.2),0_14px_22px_-8px_rgba(0,0,0,0.55),inset_0_1px_0_#fff] flex items-center justify-center">
-                        <User className="w-5 h-5" style={{ color: theme.deep }} />
+                      <div className={`${friend.size} rounded-full bg-[radial-gradient(circle_at_35%_30%,#FFFFFF,#E2E8F0_60%,#94A3B8)] shadow-[0_4px_0_rgba(0,0,0,0.18),0_16px_24px_-10px_rgba(0,0,0,0.6)] flex items-center justify-center`}>
+                        <User className="w-[46%] h-[46%]" style={{ color: theme.deep }} strokeWidth={2.4} />
                       </div>
                     </div>
                   </div>
                 ))}
+                <div className="absolute end-[14%] top-[2%] w-9 short:w-7 bv-float" style={{ animationDelay: '1.1s' }}>
+                  <Symbol3D kind="heart" className="w-full h-auto" />
+                </div>
+                <div className="absolute end-[10%] bottom-[6%] w-7 short:w-6 bv-float" style={{ animationDelay: '0.3s' }}>
+                  <Symbol3D kind="heart" className="w-full h-auto" />
+                </div>
               </div>
-              <h1 className="mt-6 text-[34px] leading-[1.05] font-extrabold tracking-[-0.03em]">Share with 3 friends</h1>
-              <p className="mt-3 text-base text-white/75 max-w-[300px]">Share {business.name} with friends who might like it.</p>
+              <h1 className="mt-5 short:mt-3 text-[clamp(28px,8.6vw,36px)] short:text-[26px] leading-[1.05] font-extrabold tracking-[-0.03em]">Share with 3 friends</h1>
+              <p className="mt-2 text-base short:text-[15px] text-white/80 max-w-[300px] break-words">Share {business.name} with friends who might like it.</p>
             </section>
 
-            <Sheet>
-              {/* Anticipation: what's unlocked next */}
-              <div className="bv-tile3d flex items-center gap-3 rounded-[20px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3 mb-5">
-                <span className="w-11 h-11 rounded-[14px] flex items-center justify-center text-white shrink-0" style={{ background: `linear-gradient(140deg, ${theme.deep}, ${theme.dark})` }}>
-                  <Gift className="w-5 h-5" />
+            <Sheet
+              footer={
+                <>
+                  <button onClick={handleShareClick} style={primaryStyle} className={primaryButton}>
+                    {copied ? (
+                      <>
+                        <Check className="w-5 h-5" />
+                        <span>Link copied ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-5 h-5" />
+                        <span>{canNativeShare ? 'Share' : 'Copy Link'}</span>
+                      </>
+                    )}
+                  </button>
+                  <button onClick={() => goTo(4)} className={`${ghostButton} mt-1`}>
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                  </button>
+                </>
+              }
+            >
+              <div className="bv-tile3d flex items-center gap-3 rounded-[20px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3">
+                <span className="w-12 h-12 shrink-0">
+                  <Symbol3D kind="ticket" className="w-full h-auto" />
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold tracking-[0.16em] uppercase text-[#64748B]">Next</p>
-                  <p className="text-[15px] font-bold leading-tight">Your {business.discount_percentage}% OFF reward</p>
+                  <p className="text-[15px] font-extrabold leading-tight text-[#0F172A]">Your {business.discount_percentage}% OFF reward</p>
                 </div>
               </div>
-
-              <button onClick={handleShareClick} style={primaryStyle} className={primaryButton}>
-                {copied ? (
-                  <>
-                    <Check className="w-5 h-5" />
-                    <span>Link copied ✓</span>
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="w-5 h-5" />
-                    <span>{canNativeShare ? 'Share' : 'Copy Link'}</span>
-                  </>
-                )}
-              </button>
-              <button onClick={() => updateStep(4)} className={`${ghostButton} mt-2`}>
-                <span>Continue</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-              </button>
-              <PoweredBy compact />
             </Sheet>
           </>
         )}
 
-        {/* STEP 4: CUSTOMER DETAILS (reward reveal) */}
+        {/* ───────── STEP 4: DETAILS (or summary once the card exists) ───────── */}
         {step === 4 && (
           <>
-            <section key="hero-4" className="flex-1 flex flex-col justify-center px-6 pt-6 pb-8">
-              <p className="text-xs font-bold tracking-[0.22em] uppercase text-white/70 bv-hero-in">Unlocked</p>
-              <h1 className="mt-2 text-[30px] max-[370px]:text-[27px] leading-[1.08] font-extrabold tracking-[-0.03em] bv-hero-in whitespace-nowrap">Your reward is ready 🎁</h1>
-              <div className="mt-7 px-2 bv-card-reveal">
-                <Card3D>
-                <RewardPreviewCard
-                  businessName={business.name}
-                  logoUrl={business.logo_url}
-                  initials={initials}
-                  color={business.primary_color}
-                  discount={business.discount_percentage}
-                  holderName={customerName}
-                />
+            <section key="hero-4" className="flex-1 flex flex-col justify-center px-5 pt-2 pb-8 short:pb-5">
+              <div className="bv-hero-in">
+                <p className="text-xs font-bold tracking-[0.22em] uppercase text-white/75">{reward ? 'Your card' : 'Unlocked'}</p>
+                <h1 className="mt-1.5 text-[clamp(26px,8vw,32px)] short:text-[24px] leading-[1.08] font-extrabold tracking-[-0.03em]">
+                  {reward ? 'Your card is already created' : 'Your reward is ready 🎁'}
+                </h1>
+              </div>
+              <div className="mt-6 short:mt-4 mx-auto w-full max-w-[380px] short:max-w-[260px] bv-card-reveal">
+                <Card3D
+                  radius="3.6% / 5.8%"
+                  satellites={
+                    <div aria-hidden className="absolute -bottom-6 -end-2 w-12 short:w-10" style={{ transform: 'translateZ(70px)' }}>
+                      <div className="bv-float"><Symbol3D kind="gift" className="w-full h-auto drop-shadow-[0_12px_16px_rgba(0,0,0,0.45)]" /></div>
+                    </div>
+                  }
+                >
+                  {reward ? (
+                    <RewardCard business={business} reward={reward} />
+                  ) : (
+                    <RewardPreviewCard
+                      businessName={business.name}
+                      logoUrl={business.logo_url}
+                      color={business.primary_color}
+                      discount={business.discount_percentage}
+                      holderName={cardHolderPreview}
+                    />
+                  )}
                 </Card3D>
               </div>
             </section>
 
-            <Sheet>
-              <p className="text-[15px] text-[#475569] mb-4">
-                Enter your details to create your personal discount card for {business.name}.
-              </p>
-              <form onSubmit={handleCreateCard} className="space-y-3.5" noValidate>
-                <Field
-                  id="customer-name"
-                  label="Name"
-                  icon={<User className="w-5 h-5" />}
-                  error={formErrors.name}
-                  input={{
-                    type: 'text',
-                    placeholder: 'e.g. Mohamed',
-                    value: customerName,
-                    onChange: (e) => setCustomerName(e.target.value),
-                    autoComplete: 'name',
-                  }}
-                />
-                <Field
-                  id="customer-phone"
-                  label="Phone Number"
-                  icon={<Phone className="w-5 h-5" />}
-                  error={formErrors.phone}
-                  input={{
-                    type: 'tel',
-                    placeholder: 'e.g. +212 672 692 764',
-                    value: customerPhone,
-                    onChange: (e) => setCustomerPhone(e.target.value),
-                    autoComplete: 'tel',
-                    inputMode: 'tel',
-                    enterKeyHint: 'done',
-                  }}
-                />
-
-                {submitError && (
-                  <div role="alert" className="p-3 bg-red-50 text-[#DC2626] border border-red-200 rounded-2xl text-sm font-semibold text-center">
-                    {submitError}
+            {reward ? (
+              <Sheet
+                footer={
+                  <button onClick={() => goTo(5)} style={primaryStyle} className={primaryButton}>
+                    <span>View my card</span>
+                    <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+                  </button>
+                }
+              >
+                <dl className="rounded-[20px] bg-slate-50 border border-slate-100 divide-y divide-slate-200 text-[15px]">
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <dt className="text-[#64748B] shrink-0">Name</dt>
+                    <dd className="font-bold text-[#0F172A] truncate">{reward.customer_name}</dd>
                   </div>
-                )}
-
-                <button type="submit" disabled={submitting} style={primaryStyle} className={`${primaryButton} !mt-5`}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Creating Your Card...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Create My Card</span>
-                      <ArrowRight className="w-5 h-5 rtl:rotate-180" />
-                    </>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3">
+                    <dt className="text-[#64748B] shrink-0">Phone Number</dt>
+                    <dd className="font-bold text-[#0F172A] truncate">{reward.customer_phone}</dd>
+                  </div>
+                </dl>
+              </Sheet>
+            ) : (
+              <Sheet
+                footer={
+                  <button type="submit" form="reward-form" disabled={submitting} style={primaryStyle} className={primaryButton}>
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Creating Your Card...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Create My Card</span>
+                        <ArrowRight className="w-5 h-5 rtl:rotate-180" />
+                      </>
+                    )}
+                  </button>
+                }
+              >
+                <p className="text-[15px] text-[#475569] mb-4">
+                  Enter your details to create your personal discount card for {business.name}.
+                </p>
+                <form id="reward-form" onSubmit={handleCreateCard} className="space-y-3.5 pb-4" noValidate>
+                  <Field
+                    id="customer-name"
+                    label="Name"
+                    icon={<User className="w-5 h-5" />}
+                    error={formErrors.name}
+                    input={{
+                      type: 'text',
+                      placeholder: 'e.g. Mohamed',
+                      value: customerName,
+                      onChange: (e) => setCustomerName(e.target.value),
+                      autoComplete: 'name',
+                      enterKeyHint: 'next',
+                    }}
+                  />
+                  <Field
+                    id="customer-phone"
+                    label="Phone Number"
+                    icon={<Phone className="w-5 h-5" />}
+                    error={formErrors.phone}
+                    input={{
+                      type: 'tel',
+                      placeholder: 'e.g. +212 672 692 764',
+                      value: customerPhone,
+                      onChange: (e) => setCustomerPhone(e.target.value),
+                      autoComplete: 'tel',
+                      inputMode: 'tel',
+                      enterKeyHint: 'done',
+                    }}
+                  />
+                  {submitError && (
+                    <div role="alert" className="p-3 bg-red-50 text-[#DC2626] border border-red-200 rounded-2xl text-sm font-semibold text-center">
+                      {submitError}
+                    </div>
                   )}
-                </button>
-              </form>
-              <PoweredBy compact />
-            </Sheet>
+                </form>
+              </Sheet>
+            )}
           </>
         )}
 
-        {/* STEP 5: DISCOUNT CARD SCREEN */}
+        {/* ───────── STEP 5: REWARD CARD ───────── */}
         {step === 5 && reward && (
           <>
-            <section key="hero-5" className="flex-1 flex flex-col justify-center px-5 pt-6 pb-8">
-              <div className="px-1 bv-hero-in">
+            <section key="hero-5" className="flex-1 flex flex-col justify-center px-5 pt-2 pb-8 short:pb-5">
+              <div className="bv-hero-in" style={revealCard ? { animationDelay: '900ms' } : undefined}>
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] bv-glass px-3 py-1.5 rounded-full">
-                  <Check className="w-3.5 h-3.5" /> Card created
+                  {reward.status === 'USED' ? (
+                    <>Used{reward.redeemed_at ? ` · ${formatDate(reward.redeemed_at)}` : ''}</>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-[#4ADE80]" /> {revealCard ? 'Card created' : 'Active · one use'}
+                    </>
+                  )}
                 </span>
-                <h1 className="mt-3 text-[32px] leading-[1.05] font-extrabold tracking-[-0.03em]">Your reward is ready.</h1>
+                <h1 className="mt-3 text-[clamp(28px,8.6vw,34px)] short:text-[26px] leading-[1.05] font-extrabold tracking-[-0.03em]">
+                  {reward.status === 'USED' ? 'This card has been used.' : 'Your reward is ready.'}
+                </h1>
               </div>
-              {/* The Personalized Reward Card SVG */}
-              <div className="mt-7 px-1 bv-card-reveal">
+
+              <div className="relative mt-6 short:mt-4 mx-auto w-full max-w-[400px] short:max-w-[280px]">
+                {revealCard && (
+                  <div aria-hidden className="absolute inset-0 pointer-events-none z-10">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="bv-particle"
+                        style={{
+                          '--a': `${i * 22.5}deg`,
+                          '--d': `${-110 - (i % 3) * 30}px`,
+                          animationDelay: '1050ms',
+                          background: ['#FDE68A', '#FFFFFF', '#F472B6', '#93C5FD'][i % 4],
+                        } as React.CSSProperties}
+                      />
+                    ))}
+                  </div>
+                )}
                 <Card3D radius="3.6% / 5.8%">
-                  <RewardCard business={business} reward={reward} cardRef={cardRef} />
+                  {revealCard ? (
+                    <div className="relative bv-flip">
+                      <div className="bv-face">
+                        <RewardCard business={business} reward={reward} cardRef={cardRef} />
+                      </div>
+                      <div className="bv-face bv-face-back absolute inset-0">
+                        <CardBack name={business.name} logo={logoTile('w-[22%] aspect-square h-auto', 'text-xl', 'rounded-[22%]')} deep={theme.deep} dark={theme.dark} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bv-card-reveal">
+                      <RewardCard business={business} reward={reward} cardRef={cardRef} />
+                    </div>
+                  )}
                 </Card3D>
               </div>
             </section>
 
-            <Sheet>
-              <p className="text-[15px] text-[#475569] mb-4">
-                Save this card and show it on your next visit to {business.name}.
+            <Sheet
+              footer={
+                <SaveCardButton business={business} reward={reward} buttonClassName={primaryButton} buttonStyle={primaryStyle} />
+              }
+            >
+              <p className="text-[15px] text-[#475569] mb-3">
+                {reward.status === 'USED'
+                  ? `This card was redeemed${reward.redeemed_at ? ` on ${formatDate(reward.redeemed_at)}` : ''}. Each card can be used once.`
+                  : `Save this card and show it on your next visit to ${business.name}.`}
               </p>
-              <SaveCardButton
-                business={business}
-                reward={reward}
-                buttonClassName={`${primaryButton}`}
-                buttonStyle={primaryStyle}
-              />
-              <ol className="mt-4 grid grid-cols-2 gap-2.5">
-                <li className="bv-tile3d rounded-[18px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3">
+              <ol className="grid grid-cols-2 gap-2.5">
+                <li className="bv-tile3d rounded-[18px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3 short:p-2.5">
                   <Download className="w-4 h-4" style={{ color: theme.deep }} />
-                  <p className="text-[13px] font-semibold mt-2 leading-snug">Save the card to your photos</p>
+                  <p className="text-[13px] font-semibold mt-1.5 leading-snug text-[#0F172A]">Save the card to your photos</p>
                 </li>
-                <li className="bv-tile3d rounded-[18px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3">
+                <li className="bv-tile3d rounded-[18px] bg-gradient-to-b from-white to-slate-100 border border-slate-100 p-3 short:p-2.5">
                   <Store className="w-4 h-4" style={{ color: theme.deep }} />
-                  <p className="text-[13px] font-semibold mt-2 leading-snug">Show it at the counter next time</p>
+                  <p className="text-[13px] font-semibold mt-1.5 leading-snug text-[#0F172A]">Show it at the counter next time</p>
                 </li>
               </ol>
-              <p className="mt-3 text-xs text-[#64748B] font-medium text-center">You can also take a screenshot.</p>
-              <PoweredBy compact />
+              <p className="mt-2.5 text-xs text-[#64748B] font-medium text-center">You can also take a screenshot.</p>
             </Sheet>
           </>
         )}
@@ -715,45 +886,44 @@ export default function CustomerExperiencePage() {
   );
 }
 
-/** Full-bleed brand backdrop (or store cover photo) behind the customer flow. */
-function Stage({
-  style,
-  coverUrl,
-  coverAlt,
-  overlayStyle,
-}: {
-  style?: React.CSSProperties;
-  coverUrl?: string | null;
-  coverAlt?: string;
-  overlayStyle?: React.CSSProperties;
-}) {
+/** Full-bleed brand backdrop behind the customer flow. */
+function Stage({ style }: { style?: React.CSSProperties }) {
   return (
-    <div aria-hidden={!coverUrl} className="fixed inset-0 -z-0 overflow-hidden" style={coverUrl ? undefined : style}>
-      {coverUrl && (
-        <>
-          <Image src={coverUrl} alt={coverAlt || ''} fill priority sizes="100vw" className="object-cover" />
-          <div className="absolute inset-0 opacity-[0.88]" style={overlayStyle} />
-        </>
-      )}
-      <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-white/[0.08] blur-3xl" />
-      <svg className="absolute -right-28 -top-16 w-[460px] h-[460px] opacity-[0.14]" viewBox="0 0 200 200" fill="none" stroke="white" strokeWidth="1.1">
-        {[30, 50, 70, 90].map((r) => <circle key={r} cx="100" cy="100" r={r} />)}
-      </svg>
-      {/* Ripple floor in perspective for depth */}
-      <div className="absolute inset-x-[-40%] bottom-[18%] h-[60vh] bv-floor opacity-[0.18]">
-        <svg className="w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="none" fill="none" stroke="white" strokeWidth="0.5">
-          {[20, 40, 60, 80, 100].map((r) => <circle key={r} cx="100" cy="100" r={r} />)}
-        </svg>
-      </div>
+    <div aria-hidden className="fixed inset-0 overflow-hidden" style={style}>
+      <div className="absolute -top-32 -end-24 w-[420px] h-[420px] rounded-full bg-white/[0.07] blur-3xl" />
       <div className="absolute inset-0 bv-grain" />
     </div>
   );
 }
 
-function Sheet({ children }: { children: React.ReactNode }) {
+/** White action sheet; the footer (primary actions) sticks to the bottom of the screen. */
+function Sheet({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) {
   return (
-    <div className="relative z-10 bg-white text-[#0F172A] rounded-t-[32px] md:rounded-[32px] md:mb-6 px-5 pt-6 pb-[max(20px,env(safe-area-inset-bottom))] shadow-[0_-24px_48px_-24px_rgba(0,0,0,0.45)] bv-sheet-up">
-      {children}
+    <div className="relative z-10 bg-white text-[#0F172A] rounded-t-[32px] md:rounded-[32px] md:mb-6 shadow-[0_-24px_48px_-24px_rgba(0,0,0,0.45)] bv-sheet-up">
+      {children ? <div className="px-5 pt-5 pb-3 short:pt-4">{children}</div> : <div className="pt-2" />}
+      {footer && (
+        <div className="sticky bottom-0 z-10 px-5 pt-4 short:pt-3 pb-[max(14px,env(safe-area-inset-bottom))] bg-white/95 backdrop-blur-sm rounded-b-[inherit]">
+          {footer}
+          <PoweredBy />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Back face shown before the reveal flip. */
+function CardBack({ name, logo, deep, dark }: { name: string; logo: React.ReactNode; deep: string; dark: string }) {
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden flex flex-col items-center justify-center gap-[4%] text-white"
+      style={{ borderRadius: '3.6% / 5.8%', background: `linear-gradient(140deg, ${deep}, ${dark} 70%, #050507)` }}
+    >
+      <svg aria-hidden className="absolute inset-0 w-full h-full opacity-[0.12]" viewBox="0 0 120 76" preserveAspectRatio="xMidYMid slice" fill="none" stroke="white" strokeWidth="0.3">
+        {[8, 14, 20, 26, 32, 38, 44].map((r) => <circle key={r} cx="60" cy="38" r={r} />)}
+      </svg>
+      {logo}
+      <p className="relative text-[clamp(13px,4vw,18px)] font-extrabold tracking-tight px-6 text-center truncate max-w-full">{name}</p>
+      <p className="relative text-[10px] font-bold tracking-[0.3em] text-white/60">REWARD CARD</p>
     </div>
   );
 }
@@ -773,7 +943,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-bold mb-1.5">
+      <label htmlFor={id} className="block text-sm font-bold mb-1.5 text-[#0F172A]">
         {label} <span className="text-[#DC2626]">*</span>
       </label>
       <div className="relative">
@@ -782,7 +952,12 @@ function Field({
           id={id}
           aria-invalid={!!error}
           {...input}
-          className={`w-full min-h-[56px] ps-12 pe-4 rounded-[18px] border bg-[#F8FAFC] text-[#0F172A] text-base placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all ${
+          onFocus={(e) => {
+            // Keep the field visible above the on-screen keyboard.
+            const target = e.currentTarget;
+            window.setTimeout(() => target.scrollIntoView({ block: 'end', behavior: 'smooth' }), 280);
+          }}
+          className={`scroll-mb-[172px] scroll-mt-[76px] w-full min-h-[56px] ps-12 pe-4 rounded-[18px] border bg-[#F8FAFC] text-[#0F172A] text-base placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all ${
             error ? 'border-[#DC2626] bg-red-50/40' : 'border-[#E2E8F0]'
           }`}
         />
@@ -793,9 +968,9 @@ function Field({
 }
 
 // boostov.ma appears ONLY as a subtle label on customer pages
-function PoweredBy({ compact = false }: { compact?: boolean }) {
+function PoweredBy() {
   return (
-    <p className={`${compact ? 'mt-3' : 'mt-5'} flex items-center justify-center gap-1.5 text-[11px] text-[#94A3B8] font-medium`}>
+    <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-[#94A3B8] font-medium">
       Powered by
       <Image src="/boostov-logo.png" alt="" width={14} height={14} />
       <span className="font-bold text-[#334155]">

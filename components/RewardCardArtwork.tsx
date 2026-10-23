@@ -10,6 +10,8 @@ interface RewardCardArtworkProps {
   logoDataUrl?: string | null;
   id?: string;
   className?: string;
+  /** Placeholder rendering before the real card exists (no number, status or date). */
+  preview?: boolean;
 }
 
 interface TextFit {
@@ -19,8 +21,10 @@ interface TextFit {
 
 const VIEW_W = 1200;
 const VIEW_H = 757;
-const PAD = 72;
-const CONTENT_RIGHT = VIEW_W - PAD;
+const PAD = 64;
+const STUB_X = 868;
+const STUB_CX = STUB_X + (VIEW_W - STUB_X) / 2;
+const NOTCH_R = 30;
 
 // System fonts only: the SVG is also rasterised to PNG, where web fonts are unavailable.
 const SANS_FAMILY = `-apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`;
@@ -50,9 +54,23 @@ function initialsFor(name: string) {
   return value.toUpperCase() || 'CB';
 }
 
-function Label({ x, y, anchor = 'start', fg, children }: { x: number; y: number; anchor?: 'start' | 'middle' | 'end'; fg: string; children: React.ReactNode }) {
+/** Security-print style wave lines (deterministic). */
+function guillochePaths(x0: number, x1: number, yBase: number, count: number, gap: number, amp: number) {
+  const paths: string[] = [];
+  for (let k = 0; k < count; k++) {
+    let d = '';
+    for (let x = x0; x <= x1; x += 12) {
+      const y = yBase + k * gap + amp * Math.sin(x / 58 + k * 0.55) + amp * 0.45 * Math.sin(x / 21 + k * 1.3);
+      d += `${x === x0 ? 'M' : 'L'}${x.toFixed(0)} ${y.toFixed(1)} `;
+    }
+    paths.push(d);
+  }
+  return paths;
+}
+
+function Label({ x, y, anchor = 'start', fg, children, opacity = 0.62 }: { x: number; y: number; anchor?: 'start' | 'middle' | 'end'; fg: string; children: React.ReactNode; opacity?: number }) {
   return (
-    <text x={x} y={y} textAnchor={anchor} fontFamily={SANS_FAMILY} fontSize="15" fontWeight="700" fill={fg} fillOpacity="0.62" letterSpacing="3">
+    <text x={x} y={y} textAnchor={anchor} fontFamily={SANS_FAMILY} fontSize="27" fontWeight="800" fill={fg} fillOpacity={opacity} letterSpacing="3.5">
       {children}
     </text>
   );
@@ -64,27 +82,31 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
   logoDataUrl,
   id = 'cardify-reward-svg',
   className = 'w-full h-auto drop-shadow-xl',
+  preview = false,
 }) => {
   const primaryColor = normalizeHexColor(business.primary_color);
   const fg = getContrastTextColor(primaryColor);
   const lightText = fg === '#FFFFFF';
-  const gradientEnd = shadeColor(primaryColor, lightText ? 0.3 : 0.8);
+  const midColor = shadeColor(primaryColor, lightText ? 0.62 : 0.9);
+  const endColor = shadeColor(primaryColor, lightText ? 0.28 : 0.78);
   const logoToRender = logoDataUrl !== undefined ? logoDataUrl : business.logo_url;
   const initials = useMemo(() => initialsFor(business.name), [business.name]);
+  const waves = useMemo(() => guillochePaths(0, STUB_X, 300, 9, 15, 20), []);
+  const sealRings = [74, 64];
 
-  const customerName = (reward.customer_name || 'CUSTOMER').trim().toUpperCase();
-  const discountLabel = `${reward.discount_percentage}% OFF`;
+  const isUsed = !preview && reward.status === 'USED';
+  const customerName = (reward.customer_name || '').trim().toUpperCase() || (preview ? 'YOUR NAME' : 'CUSTOMER');
+  const percent = `${reward.discount_percentage}%`;
 
-  const nameFit = fitText(business.name, 720, 40, 22, 0.56);
-  const discountFit = fitText(discountLabel, 1040, 128, 64, 0.55);
-  const customerFit = fitText(customerName, 1040, 48, 30, 0.62);
-  const phoneFit = fitText(reward.customer_phone, 360, 32, 20, 0.6);
-
-  const pillText = 'NEXT VISIT · ONE USE';
-  const pillWidth = Math.ceil(pillText.length * 0.62 * 16 + (pillText.length - 1) * 3) + 52;
-  const pillHeight = 46;
-  const pillX = PAD + 150;
-  const pillY = 233;
+  const nameFit = fitText(business.name, STUB_X - PAD - 136 - 30, 50, 28, 0.56);
+  const percentFit = fitText(percent, 440, 210, 130, 0.6);
+  const percentWidth = percent.length * 0.6 * percentFit.fontSize;
+  const customerFit = fitText(customerName, STUB_X - PAD - 50, 56, 32, 0.64);
+  const metaText = preview
+    ? 'Phone · issue date added when created'
+    : `${reward.customer_phone}  ·  Issued ${formatDate(reward.created_at)}`;
+  const metaFit = fitText(metaText, STUB_X - PAD - 50, 32, 22, 0.56);
+  const serial = preview ? '———' : formatSerialNumber(reward.serial_number);
 
   return (
     <svg
@@ -94,70 +116,84 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
       className={className}
       style={{ width: '100%', height: 'auto', display: 'block' }}
       role="img"
-      aria-label={`${business.name} reward card, ${discountLabel}, card number ${formatSerialNumber(reward.serial_number)}`}
+      aria-label={
+        preview
+          ? `${business.name} reward card preview, ${percent} off`
+          : `${business.name} reward card, ${percent} off, card number ${serial}, ${isUsed ? 'used' : 'active'}`
+      }
     >
       <defs>
-        <linearGradient id="rewardCardBgGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="rcBg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor={primaryColor} />
-          <stop offset="100%" stopColor={gradientEnd} />
+          <stop offset="55%" stopColor={midColor} />
+          <stop offset="100%" stopColor={endColor} />
         </linearGradient>
-        <linearGradient id="rewardCardSheen" x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.22" />
-          <stop offset="45%" stopColor="#FFFFFF" stopOpacity="0.04" />
+        <linearGradient id="rcSheen" x1="0" y1="0" x2="1" y2="0.7">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.24" />
+          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.05" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="rewardCardChip" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="rcHolo" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F0ABFC" />
+          <stop offset="25%" stopColor="#93C5FD" />
+          <stop offset="50%" stopColor="#6EE7B7" />
+          <stop offset="75%" stopColor="#FDE68A" />
+          <stop offset="100%" stopColor="#FCA5A5" />
+        </linearGradient>
+        <linearGradient id="rcChip" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#F7E2A6" />
           <stop offset="50%" stopColor="#C9A250" />
           <stop offset="100%" stopColor="#F1D48A" />
         </linearGradient>
-        <linearGradient id="rewardCardRim" x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
-          <stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.05" />
+        <linearGradient id="rcRim" x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
+          <stop offset="55%" stopColor="#FFFFFF" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.04" />
         </linearGradient>
-        <clipPath id="rewardCardClip">
-          <rect width={VIEW_W} height={VIEW_H} rx="44" />
-        </clipPath>
-        <clipPath id="rewardCardLogoClip">
-          <rect x={PAD} y="64" width="100" height="100" rx="26" />
+        <mask id="rcShape">
+          <rect width={VIEW_W} height={VIEW_H} rx="44" fill="#FFFFFF" />
+          <circle cx={STUB_X} cy="0" r={NOTCH_R} fill="#000000" />
+          <circle cx={STUB_X} cy={VIEW_H} r={NOTCH_R} fill="#000000" />
+        </mask>
+        <clipPath id="rcLogoClip">
+          <rect x={PAD} y="52" width="112" height="112" rx="28" />
         </clipPath>
       </defs>
 
-      <g clipPath="url(#rewardCardClip)">
-        <rect width={VIEW_W} height={VIEW_H} fill="url(#rewardCardBgGrad)" />
+      <g mask="url(#rcShape)">
+        <rect width={VIEW_W} height={VIEW_H} fill="url(#rcBg)" />
 
-        {/* Signal arcs motif */}
-        <g fill="none" stroke={fg} strokeOpacity="0.07" strokeWidth="2">
-          {[180, 270, 360, 450, 540, 630].map((r) => (
-            <circle key={r} cx={VIEW_W + 40} cy={VIEW_H + 40} r={r} />
-          ))}
+        {/* Ghost numeral */}
+        <text x={STUB_X - 30} y="640" textAnchor="end" fontFamily={SANS_FAMILY} fontSize="560" fontWeight="900" fill={fg} fillOpacity="0.045" letterSpacing="-20">%</text>
+
+        {/* Guilloche security lines */}
+        <g fill="none" stroke={fg} strokeOpacity="0.075" strokeWidth="1.6">
+          {waves.map((d, i) => <path key={i} d={d} />)}
         </g>
-        <path d={`M0 0 H${VIEW_W * 0.72} L${VIEW_W * 0.38} ${VIEW_H} H0 Z`} fill="url(#rewardCardSheen)" />
+
+        {/* Stub panel */}
+        <rect x={STUB_X} y="0" width={VIEW_W - STUB_X} height={VIEW_H} fill="#000000" fillOpacity={lightText ? 0.16 : 0.06} />
+        <path d={`M0 0 H${VIEW_W * 0.7} L${VIEW_W * 0.36} ${VIEW_H} H0 Z`} fill="url(#rcSheen)" />
+
+        {/* Rim */}
+        <rect x="2" y="2" width={VIEW_W - 4} height={VIEW_H - 4} rx="42" fill="none" stroke="url(#rcRim)" strokeWidth="3" />
       </g>
-      <rect x="2" y="2" width={VIEW_W - 4} height={VIEW_H - 4} rx="42" fill="none" stroke="url(#rewardCardRim)" strokeWidth="3" />
+
+      {/* Perforation */}
+      <line x1={STUB_X} y1={NOTCH_R + 18} x2={STUB_X} y2={VIEW_H - NOTCH_R - 18} stroke={fg} strokeOpacity="0.4" strokeWidth="5" strokeDasharray="0.1 17" strokeLinecap="round" />
 
       {/* Logo (business initials underlay, real logo overlay when available) */}
-      <rect x={PAD} y="64" width="100" height="100" rx="26" fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.24" strokeWidth="2" />
-      <text x={PAD + 50} y="129" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="40" fontWeight="800" fill={fg} fillOpacity="0.9" letterSpacing="0.5">
+      <rect x={PAD} y="52" width="112" height="112" rx="28" fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.28" strokeWidth="2" />
+      <text x={PAD + 56} y="122" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="44" fontWeight="800" fill={fg} fillOpacity="0.9">
         {initials}
       </text>
       {logoToRender && (
-        <image
-          href={logoToRender}
-          x={PAD}
-          y="64"
-          width="100"
-          height="100"
-          preserveAspectRatio="xMidYMid meet"
-          clipPath="url(#rewardCardLogoClip)"
-        />
+        <image href={logoToRender} x={PAD} y="52" width="112" height="112" preserveAspectRatio="xMidYMid meet" clipPath="url(#rcLogoClip)" />
       )}
 
-      {/* Business name + card type */}
       <text
-        x={PAD + 124}
-        y="112"
+        x={PAD + 136}
+        y="106"
         fontFamily={SANS_FAMILY}
         fontSize={nameFit.fontSize}
         fontWeight="800"
@@ -168,92 +204,115 @@ export const RewardCardArtwork: React.FC<RewardCardArtworkProps> = ({
       >
         {business.name}
       </text>
-      <Label x={PAD + 126} y={148} fg={fg}>REWARD CARD</Label>
+      <Label x={PAD + 138} y={150} fg={fg}>REWARD CARD</Label>
 
-      {/* Contactless mark (top right) */}
-      <g transform={`translate(${CONTENT_RIGHT - 52} 72)`} fill="none" stroke={fg} strokeOpacity="0.85" strokeWidth="6" strokeLinecap="round">
-        <path d="M8 14 a30 30 0 0 1 0 52" />
-        <path d="M24 4 a46 46 0 0 1 0 72" />
-        <path d="M40 -6 a62 62 0 0 1 0 92" />
-      </g>
-
-      {/* Chip */}
-      <g transform={`translate(${PAD} 214)`}>
-        <rect width="118" height="86" rx="16" fill="url(#rewardCardChip)" />
-        <g fill="none" stroke="#8A6A2A" strokeOpacity="0.55" strokeWidth="2.5">
-          <rect x="38" y="18" width="42" height="50" rx="9" />
-          <path d="M0 30 H38 M0 56 H38 M80 30 H118 M80 56 H118 M59 0 V18 M59 68 V86" />
+      {/* Chip + contactless */}
+      <g transform={`translate(${PAD} 210)`}>
+        <rect width="108" height="80" rx="15" fill="url(#rcChip)" />
+        <g fill="none" stroke="#8A6A2A" strokeOpacity="0.55" strokeWidth="2.4">
+          <rect x="35" y="17" width="38" height="46" rx="8" />
+          <path d="M0 28 H35 M0 52 H35 M73 28 H108 M73 52 H108 M54 0 V17 M54 63 V80" />
         </g>
       </g>
-
-      {/* NEXT VISIT pill */}
-      <rect x={pillX} y={pillY} width={pillWidth} height={pillHeight} rx={pillHeight / 2} fill={fg} fillOpacity="0.12" stroke={fg} strokeOpacity="0.24" strokeWidth="1.5" />
-      <text x={pillX + 26} y={pillY + pillHeight / 2 + 6} fontFamily={SANS_FAMILY} fontSize="16" fontWeight="800" fill={fg} fillOpacity="0.9" letterSpacing="3">
-        {pillText}
-      </text>
+      <g transform={`translate(${PAD + 134} 220)`} fill="none" stroke={fg} strokeOpacity="0.8" strokeWidth="5" strokeLinecap="round">
+        <path d="M6 14 a26 26 0 0 1 0 34" />
+        <path d="M20 6 a40 40 0 0 1 0 50" />
+        <path d="M34 -2 a54 54 0 0 1 0 66" />
+      </g>
 
       {/* Hero: discount */}
       <text
-        x={PAD - 4}
-        y="438"
+        x={PAD - 6}
+        y="500"
         fontFamily={SANS_FAMILY}
-        fontSize={discountFit.fontSize}
+        fontSize={percentFit.fontSize}
         fontWeight="900"
         fill={fg}
-        letterSpacing="-3"
-        textLength={discountFit.textLength}
-        lengthAdjust={discountFit.textLength ? 'spacingAndGlyphs' : undefined}
+        letterSpacing="-6"
+        textLength={percentFit.textLength}
+        lengthAdjust={percentFit.textLength ? 'spacingAndGlyphs' : undefined}
       >
-        {discountLabel}
+        {percent}
       </text>
+      <text x={PAD + Math.min(percentWidth, 440) + 4} y="420" fontFamily={SANS_FAMILY} fontSize="84" fontWeight="900" fill={fg} letterSpacing="-1">
+        OFF
+      </text>
+      <Label x={PAD + Math.min(percentWidth, 440) + 8} y={492} fg={fg} opacity={0.8}>NEXT VISIT</Label>
 
       {/* Cardholder */}
-      <Label x={PAD} y={494} fg={fg}>CARDHOLDER</Label>
+      <Label x={PAD} y={572} fg={fg}>CARDHOLDER</Label>
       <text
         x={PAD}
-        y="544"
+        y="634"
         fontFamily={SANS_FAMILY}
         fontSize={customerFit.fontSize}
         fontWeight="800"
         fill={fg}
+        fillOpacity={preview && !reward.customer_name.trim() ? 0.45 : 1}
         letterSpacing="2"
         textLength={customerFit.textLength}
         lengthAdjust={customerFit.textLength ? 'spacingAndGlyphs' : undefined}
       >
         {customerName}
       </text>
-
-      {/* Divider */}
-      <line x1={PAD} y1="590" x2={CONTENT_RIGHT} y2="590" stroke={fg} strokeOpacity="0.2" strokeWidth="2" />
-
-      {/* Bottom row: card number / phone / issued */}
-      <Label x={PAD} y={634} fg={fg}>CARD NO.</Label>
-      <text x={PAD} y="684" fontFamily={MONO_FAMILY} fontSize="38" fontWeight="800" fill={fg} letterSpacing="2">
-        #{formatSerialNumber(reward.serial_number)}
-      </text>
-
-      <Label x={430} y={634} fg={fg}>PHONE</Label>
       <text
-        x={430}
-        y="680"
+        x={PAD}
+        y="690"
         fontFamily={SANS_FAMILY}
-        fontSize={phoneFit.fontSize}
-        fontWeight="800"
+        fontSize={metaFit.fontSize}
+        fontWeight="700"
         fill={fg}
-        letterSpacing="1"
-        textLength={phoneFit.textLength}
-        lengthAdjust={phoneFit.textLength ? 'spacingAndGlyphs' : undefined}
+        fillOpacity="0.72"
+        letterSpacing="0.6"
+        textLength={metaFit.textLength}
+        lengthAdjust={metaFit.textLength ? 'spacingAndGlyphs' : undefined}
       >
-        {reward.customer_phone}
+        {metaText}
       </text>
 
-      <Label x={CONTENT_RIGHT} y={634} anchor="end" fg={fg}>ISSUED</Label>
-      <text x={CONTENT_RIGHT} y="680" textAnchor="end" fontFamily={SANS_FAMILY} fontSize="28" fontWeight="800" fill={fg} letterSpacing="1.5">
-        {formatDate(reward.created_at)}
+      {/* Stub: holographic one-use seal */}
+      <g>
+        <circle cx={STUB_CX} cy="158" r="86" fill="url(#rcHolo)" fillOpacity="0.88" />
+        <circle cx={STUB_CX} cy="158" r="86" fill="none" stroke="#FFFFFF" strokeOpacity="0.75" strokeWidth="2.5" />
+        <g fill="none" stroke="#FFFFFF" strokeOpacity="0.45" strokeWidth="1.2">
+          {sealRings.map((r) => <circle key={r} cx={STUB_CX} cy="158" r={r} strokeDasharray="3 5" />)}
+        </g>
+        <text x={STUB_CX} y="166" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="66" fontWeight="900" fill="#1E1B4B" fillOpacity="0.82">1×</text>
+        <text x={STUB_CX} y="204" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="24" fontWeight="900" fill="#1E1B4B" fillOpacity="0.8" letterSpacing="3">ONE USE</text>
+      </g>
+
+      <Label x={STUB_CX} y={316} anchor="middle" fg={fg}>CARD NO.</Label>
+      <text x={STUB_CX} y="384" textAnchor="middle" fontFamily={MONO_FAMILY} fontSize="62" fontWeight="800" fill={fg} letterSpacing="3">
+        #{serial}
       </text>
-      <text x={CONTENT_RIGHT} y="716" textAnchor="end" fontFamily={SANS_FAMILY} fontSize="15" fontWeight="700" fill={fg} fillOpacity="0.55" letterSpacing="1">
+
+      {/* Status (real data only) */}
+      {!preview && (
+        <g>
+          <rect x={STUB_CX - 112} y="424" width="224" height="64" rx="32" fill={fg} fillOpacity={isUsed ? 0.08 : 0.14} stroke={fg} strokeOpacity="0.3" strokeWidth="1.5" />
+          <circle cx={STUB_CX - 70} cy="456" r="9" fill={isUsed ? fg : '#4ADE80'} fillOpacity={isUsed ? 0.45 : 1} />
+          <text x={STUB_CX + 14} y="466" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="28" fontWeight="900" fill={fg} letterSpacing="3">
+            {isUsed ? 'USED' : 'ACTIVE'}
+          </text>
+          {isUsed && reward.redeemed_at && (
+            <text x={STUB_CX} y="534" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="26" fontWeight="700" fill={fg} fillOpacity="0.65" letterSpacing="1">
+              {formatDate(reward.redeemed_at)}
+            </text>
+          )}
+        </g>
+      )}
+
+      <text x={STUB_CX} y="696" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="27" fontWeight="800" fill={fg} fillOpacity="0.55" letterSpacing="1">
         boostov.ma
       </text>
+
+      {/* Redeemed stamp */}
+      {isUsed && (
+        <g transform={`rotate(-14 ${STUB_X / 2} 330)`} opacity="0.85">
+          <rect x={STUB_X / 2 - 230} y="280" width="460" height="104" rx="18" fill={lightText ? '#7F1D1D' : '#FEF2F2'} fillOpacity="0.35" stroke={lightText ? '#FCA5A5' : '#B91C1C'} strokeWidth="7" />
+          <text x={STUB_X / 2} y="355" textAnchor="middle" fontFamily={SANS_FAMILY} fontSize="62" fontWeight="900" fill={lightText ? '#FCA5A5' : '#B91C1C'} letterSpacing="10">REDEEMED</text>
+        </g>
+      )}
     </svg>
   );
 };
