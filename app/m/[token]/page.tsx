@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Business, Reward } from '@/lib/types';
 import { formatSerialNumber, formatDate } from '@/lib/utils';
-import { Search, Loader2, CheckCircle2, AlertCircle, ShieldAlert, Store, Clock } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, AlertCircle, ShieldAlert, Store, Clock, Ticket, X, ChevronRight, BadgeCheck } from 'lucide-react';
+import { getBrandTheme } from '@/lib/brand-theme';
 
 export default function MerchantDashboardPage() {
   const params = useParams();
@@ -132,12 +133,40 @@ export default function MerchantDashboardPage() {
     }
   };
 
+
+  const counts = {
+    ALL: rewards.length,
+    ACTIVE: rewards.filter((r) => r.status === 'ACTIVE').length,
+    USED: rewards.filter((r) => r.status === 'USED').length,
+  };
+
+  const closeModal = () => {
+    setSelectedReward(null);
+    setConfirmingRedeem(false);
+    setRedeemError(null);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3 text-[#64748B]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
-          <span className="text-sm font-medium">Loading merchant portal...</span>
+      <div className="min-h-dvh bg-[#F8FAFC]" aria-busy="true">
+        <div className="bg-white border-b border-[#E2E8F0]">
+          <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-slate-200 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-3.5 w-36 rounded-full bg-slate-200 animate-pulse" />
+              <div className="h-2.5 w-24 rounded-full bg-slate-200 animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />)}
+          </div>
+          <div className="h-14 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />
+          {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />)}
+          <p className="flex items-center justify-center gap-2 pt-2 text-sm font-medium text-[#64748B]">
+            <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" /> Loading merchant portal...
+          </p>
         </div>
       </div>
     );
@@ -145,56 +174,92 @@ export default function MerchantDashboardPage() {
 
   if (error || !business) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-4 bg-[#F8FAFC]">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-md border border-[#E2E8F0] text-center">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-[#F8FAFC]">
+        <div className="w-full max-w-md bg-white rounded-[28px] p-8 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.25)] border border-[#E2E8F0] text-center animate-scaleUp">
           <div className="w-16 h-16 bg-red-50 text-[#DC2626] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h1 className="text-xl font-bold text-[#0F172A] mb-2">Access Denied</h1>
+          <h1 className="text-xl font-extrabold text-[#0F172A] mb-2 tracking-tight">Access Denied</h1>
           <p className="text-sm text-[#64748B]">{error || 'Invalid merchant link.'}</p>
         </div>
+        <p className="mt-6 inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B]">
+          Powered by
+          <Image src="/boostov-logo.png" alt="" width={16} height={16} />
+          <span className="font-bold text-[#0F172A]">boostov<span className="text-[#2563EB]">.ma</span></span>
+        </p>
       </div>
     );
   }
 
+  const filterOptions: { key: 'ALL' | 'ACTIVE' | 'USED'; label: string }[] = [
+    { key: 'ALL', label: 'All' },
+    { key: 'ACTIVE', label: 'Active' },
+    { key: 'USED', label: 'Used' },
+  ];
+
+  const theme = getBrandTheme(business.primary_color);
+  const primary3d = {
+    background: 'linear-gradient(180deg, #22C55E -30%, #15803D 100%)',
+    '--bv-edge': '#14532D',
+    '--bv-glow': 'rgba(22,163,74,0.7)',
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-dvh bg-[#F8FAFC]">
-      {/* HEADER */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
-              {business.logo_url ? (
-                <Image
-                  src={business.logo_url}
-                  alt={business.name}
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-contain rounded-lg"
-                />
-              ) : (
-                <Store className="w-5 h-5 text-[#2563EB]" />
-              )}
+    <div className="relative min-h-dvh bg-[#F1F5F9] overflow-x-hidden">
+      {/* BRAND STAGE HEADER */}
+      <header
+        className="relative overflow-hidden text-white"
+        style={{ background: `radial-gradient(120% 80% at 90% 0%, rgba(255,255,255,0.18), transparent 55%), linear-gradient(160deg, ${theme.deep} 0%, ${theme.dark} 100%)` }}
+      >
+        <svg aria-hidden className="absolute -right-24 -top-20 w-[380px] h-[380px] opacity-[0.14]" viewBox="0 0 200 200" fill="none" stroke="white" strokeWidth="1.1">
+          {[30, 50, 70, 90].map((r) => <circle key={r} cx="100" cy="100" r={r} />)}
+        </svg>
+        <div aria-hidden className="absolute inset-0 bv-grain" />
+        <div className="relative max-w-2xl mx-auto px-5 pt-[max(18px,env(safe-area-inset-top))] pb-16">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-14 h-14 rounded-[18px] bg-gradient-to-b from-white to-slate-200 p-1 shadow-[0_3px_0_rgba(0,0,0,0.25),0_16px_30px_-12px_rgba(0,0,0,0.6)] ring-4 ring-white/15 overflow-hidden shrink-0 flex items-center justify-center">
+                {business.logo_url ? (
+                  <Image src={business.logo_url} alt={`${business.name} logo`} width={56} height={56} className="w-full h-full object-contain rounded-[14px]" />
+                ) : (
+                  <Store className="w-6 h-6" style={{ color: theme.deep }} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-white/70 truncate">Merchant Redemption Portal</p>
+                <h1 className="text-[26px] leading-tight font-extrabold tracking-[-0.02em] truncate">{business.name}</h1>
+              </div>
             </div>
-            <div>
-              <h1 className="text-base font-bold text-[#0F172A] leading-tight">
-                {business.name}
-              </h1>
-              <p className="text-xs text-[#64748B]">Merchant Redemption Portal</p>
-            </div>
+            <span className="bv-glass inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0">
+              <span className="w-2 h-2 rounded-full bg-[#4ADE80] shadow-[0_0_0_3px_rgba(74,222,128,0.25)]" />
+              Active
+            </span>
           </div>
 
-          <div className="bg-emerald-50 text-[#16A34A] border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
-            Merchant Active
+          {/* STATS */}
+          <div className="mt-6 grid grid-cols-3 gap-2.5">
+            {[
+              { label: 'Total', value: counts.ALL, icon: <Ticket className="w-4 h-4" /> },
+              { label: 'Active', value: counts.ACTIVE, icon: <CheckCircle2 className="w-4 h-4" /> },
+              { label: 'Used', value: counts.USED, icon: <Clock className="w-4 h-4" /> },
+            ].map((stat) => (
+              <div key={stat.label} className="bv-glass rounded-[20px] p-3.5">
+                <div className="flex items-center justify-between text-white/75">
+                  <span className="text-[11px] font-bold uppercase tracking-wider">{stat.label}</span>
+                  {stat.icon}
+                </div>
+                <p className="text-[28px] leading-none mt-2 font-extrabold tabular-nums">{stat.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTAINER */}
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      {/* MAIN SHEET */}
+      <main className="relative -mt-8 max-w-2xl mx-auto bg-white rounded-t-[32px] sm:rounded-[32px] sm:mb-8 px-4 sm:px-6 pt-6 pb-8 space-y-5 shadow-[0_-24px_48px_-28px_rgba(15,23,42,0.5)] min-h-[60dvh] bv-sheet-up">
         {/* Success Alert */}
         {redeemSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-[#16A34A] rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">
+          <div role="status" className="p-4 bg-emerald-50 border border-emerald-200 text-[#15803D] rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">
             <CheckCircle2 className="w-5 h-5 shrink-0" />
             <span>{redeemSuccess}</span>
           </div>
@@ -202,188 +267,191 @@ export default function MerchantDashboardPage() {
 
         {/* SEARCH BAR */}
         <div className="relative">
-          <Search className="w-5 h-5 text-[#64748B] absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <label htmlFor="merchant-search" className="sr-only">Search rewards</label>
+          <Search className="w-5 h-5 text-[#64748B] absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
+            id="merchant-search"
             type="text"
-            placeholder="Search by Card #, Customer Name, or Phone..."
+            placeholder="Card #, name or phone"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
             autoComplete="off"
             inputMode="search"
             enterKeyHint="search"
-            className="w-full pl-12 pr-16 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl text-[#0F172A] placeholder-[#64748B] text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] shadow-sm transition-all"
+            className="w-full min-h-[56px] ps-12 pe-14 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[18px] text-[#0F172A] placeholder-[#94A3B8] text-base focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent shadow-sm transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#64748B] hover:text-[#0F172A]"
+              aria-label="Clear search"
+              className="absolute end-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A] transition-colors"
             >
-              Clear
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {/* REWARDS LIST */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
-              Customer Rewards ({filteredRewards.length})
+        <section className="space-y-3" aria-label="Customer rewards">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-[#0F172A]">
+              Customer Rewards <span className="text-[#64748B] font-semibold">({filteredRewards.length})</span>
             </h2>
 
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setStatusFilter('ALL')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                  statusFilter === 'ALL'
-                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                    : 'bg-white text-[#64748B] border-[#E2E8F0] hover:bg-slate-100'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setStatusFilter('ACTIVE')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                  statusFilter === 'ACTIVE'
-                    ? 'bg-[#16A34A] text-white border-[#16A34A]'
-                    : 'bg-white text-[#16A34A] border-emerald-200 hover:bg-emerald-50'
-                }`}
-              >
-                Active
-              </button>
-              <button
-                onClick={() => setStatusFilter('USED')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                  statusFilter === 'USED'
-                    ? 'bg-[#DC2626] text-white border-[#DC2626]'
-                    : 'bg-white text-[#DC2626] border-red-200 hover:bg-red-50'
-                }`}
-              >
-                Used
-              </button>
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-[#E2E8F0]" role="tablist" aria-label="Filter by status">
+              {filterOptions.map((option) => (
+                <button
+                  key={option.key}
+                  role="tab"
+                  aria-selected={statusFilter === option.key}
+                  onClick={() => setStatusFilter(option.key)}
+                  className={`px-3 min-h-[36px] rounded-lg text-xs font-bold transition-all ${
+                    statusFilter === option.key ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {filteredRewards.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-[#E2E8F0] text-center text-[#64748B]">
-              <p className="text-sm font-medium">No rewards found matching your search.</p>
+            <div className="bg-white rounded-3xl p-10 border border-dashed border-[#CBD5E1] text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-[#64748B] flex items-center justify-center mx-auto mb-3">
+                <Search className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-bold text-[#0F172A]">No rewards found</p>
+              <p className="text-xs text-[#64748B] mt-1">No rewards found matching your search.</p>
             </div>
           ) : (
-            filteredRewards.map((reward) => {
-              const isUsed = reward.status === 'USED';
-              return (
-                <div
-                  key={reward.id}
-                  onClick={() => {
-                    setSelectedReward(reward);
-                    setConfirmingRedeem(false);
-                    setRedeemError(null);
-                  }}
-                  className={`bg-white rounded-2xl p-4 border transition-all cursor-pointer hover:border-[#2563EB]/40 active:scale-[0.99] flex items-center justify-between shadow-sm ${
-                    isUsed ? 'border-red-100 bg-red-50/10' : 'border-[#E2E8F0]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center font-mono font-extrabold text-sm border ${
-                        isUsed
-                          ? 'bg-red-50 text-[#DC2626] border-red-200'
-                          : 'bg-emerald-50 text-[#16A34A] border-emerald-200'
-                      }`}
+            <ul className="space-y-2.5">
+              {filteredRewards.map((reward) => {
+                const isUsed = reward.status === 'USED';
+                return (
+                  <li key={reward.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedReward(reward);
+                        setConfirmingRedeem(false);
+                        setRedeemError(null);
+                      }}
+                      className="bv-tile3d w-full text-left bg-gradient-to-b from-white to-slate-50 rounded-[20px] p-3.5 border border-[#E2E8F0] transition-all hover:border-[#2563EB]/40 active:translate-y-px flex items-center gap-3"
                     >
-                      <span className="text-[9px] font-sans font-semibold tracking-tighter opacity-70">
-                        NO.
-                      </span>
-                      <span>#{formatSerialNumber(reward.serial_number)}</span>
-                    </div>
+                      <div
+                        className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center font-mono font-extrabold text-sm border shrink-0 ${
+                          isUsed ? 'bg-slate-50 text-[#64748B] border-[#E2E8F0]' : 'bg-blue-50 text-[#1D4ED8] border-blue-100'
+                        }`}
+                      >
+                        <span className="text-[9px] font-sans font-bold tracking-wider opacity-70">NO.</span>
+                        <span>#{formatSerialNumber(reward.serial_number)}</span>
+                      </div>
 
-                    <div>
-                      <h3 className="font-bold text-[#0F172A] text-base leading-tight">
-                        {reward.customer_name}
-                      </h3>
-                      <p className="text-xs text-[#64748B] mt-0.5 font-medium">
-                        {reward.customer_phone}
-                      </p>
-                    </div>
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-bold text-[15px] leading-tight truncate ${isUsed ? 'text-[#64748B]' : 'text-[#0F172A]'}`}>
+                          {reward.customer_name}
+                        </h3>
+                        <p className="text-xs text-[#64748B] mt-0.5 font-medium truncate">{reward.customer_phone}</p>
+                        <p className="text-[11px] text-[#94A3B8] mt-0.5">{formatDate(reward.created_at)}</p>
+                      </div>
 
-                  <div className="text-right flex flex-col items-end gap-1">
-                    {isUsed ? (
-                      <span className="px-3 py-1 bg-red-100 text-[#DC2626] text-xs font-bold rounded-full border border-red-200 uppercase tracking-wide">
-                        USED
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 bg-emerald-100 text-[#16A34A] text-xs font-bold rounded-full border border-emerald-200 uppercase tracking-wide">
-                        ACTIVE ({reward.discount_percentage}% OFF)
-                      </span>
-                    )}
-                    <span className="text-[11px] text-[#64748B]">
-                      {formatDate(reward.created_at)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isUsed ? (
+                          <span className="px-2.5 py-1 bg-slate-100 text-[#64748B] text-[11px] font-bold rounded-full border border-[#E2E8F0] uppercase tracking-wide whitespace-nowrap">
+                            Used
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-emerald-50 text-[#15803D] text-[11px] font-bold rounded-full border border-emerald-200 uppercase tracking-wide whitespace-nowrap">
+                            {reward.discount_percentage}% · Active
+                          </span>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </div>
+        </section>
+
+        <p className="pt-2 pb-4 flex items-center justify-center gap-1.5 text-xs font-medium text-[#64748B]">
+          Powered by
+          <Image src="/boostov-logo.png" alt="" width={16} height={16} />
+          <span className="font-bold text-[#0F172A]">boostov<span className="text-[#2563EB]">.ma</span></span>
+        </p>
       </main>
 
-      {/* REWARD DETAILS & REDEMPTION MODAL */}
+      {/* REWARD DETAILS & REDEMPTION MODAL (bottom sheet on mobile) */}
       {selectedReward && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#E2E8F0] space-y-5 animate-scaleUp max-h-[90dvh] overflow-y-auto overscroll-contain">
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
+        <div
+          className="fixed inset-0 z-50 bg-[#0F172A]/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !redeeming) closeModal();
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reward-dialog-title"
+            className="bg-white rounded-t-[32px] sm:rounded-[32px] max-w-md w-full p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl border border-[#E2E8F0] space-y-5 animate-step-in max-h-[92dvh] overflow-y-auto overscroll-contain"
+          >
+            <div className="mx-auto -mt-2 mb-1 h-1.5 w-10 rounded-full bg-slate-200 sm:hidden" aria-hidden />
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider">
-                  Card Details
-                </span>
-                <h2 className="text-2xl font-black text-[#0F172A] font-mono">
+                <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Card Details</span>
+                <h2 id="reward-dialog-title" className="text-3xl font-black text-[#0F172A] font-mono mt-0.5">
                   #{formatSerialNumber(selectedReward.serial_number)}
                 </h2>
               </div>
 
-              {selectedReward.status === 'USED' ? (
-                <span className="px-3.5 py-1.5 bg-red-100 text-[#DC2626] text-xs font-extrabold rounded-full border border-red-200 uppercase tracking-wider">
-                  USED
-                </span>
-              ) : (
-                <span className="px-3.5 py-1.5 bg-emerald-100 text-[#16A34A] text-xs font-extrabold rounded-full border border-emerald-200 uppercase tracking-wider">
-                  ACTIVE
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {selectedReward.status === 'USED' ? (
+                  <span className="px-3 py-1.5 bg-slate-100 text-[#64748B] text-xs font-extrabold rounded-full border border-[#E2E8F0] uppercase tracking-wider">
+                    USED
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 bg-emerald-50 text-[#15803D] text-xs font-extrabold rounded-full border border-emerald-200 uppercase tracking-wider">
+                    ACTIVE
+                  </span>
+                )}
+                <button
+                  onClick={closeModal}
+                  disabled={redeeming}
+                  aria-label="Close"
+                  className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-[#0F172A] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3 bg-[#F8FAFC] p-4 rounded-2xl border border-[#E2E8F0]">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#64748B] font-medium">Customer Name:</span>
-                <span className="font-bold text-[#0F172A]">{selectedReward.customer_name}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#64748B] font-medium">Phone Number:</span>
-                <span className="font-bold text-[#0F172A]">{selectedReward.customer_phone}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#64748B] font-medium">Discount Offer:</span>
-                <span className="font-bold text-[#2563EB]">{selectedReward.discount_percentage}% OFF</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#64748B] font-medium">Created Date:</span>
-                <span className="font-semibold text-[#0F172A]">{formatDate(selectedReward.created_at)}</span>
-              </div>
+            <dl className="divide-y divide-[#E2E8F0] bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] text-sm">
+              {[
+                ['Customer Name', selectedReward.customer_name, 'text-[#0F172A]'],
+                ['Phone Number', selectedReward.customer_phone, 'text-[#0F172A]'],
+                ['Discount Offer', `${selectedReward.discount_percentage}% OFF`, 'text-[#2563EB]'],
+                ['Created Date', formatDate(selectedReward.created_at), 'text-[#0F172A]'],
+              ].map(([label, value, tone]) => (
+                <div key={label} className="flex justify-between items-center gap-4 px-4 py-3">
+                  <dt className="text-[#64748B] font-medium">{label}</dt>
+                  <dd className={`font-bold text-right ${tone}`}>{value}</dd>
+                </div>
+              ))}
 
               {selectedReward.status === 'USED' && selectedReward.redeemed_at && (
-                <div className="flex justify-between items-center text-sm pt-2 border-t border-red-200 text-[#DC2626]">
-                  <span className="font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> Redeemed At:
-                  </span>
-                  <span className="font-bold">{formatDate(selectedReward.redeemed_at)}</span>
+                <div className="flex justify-between items-center gap-4 px-4 py-3 text-[#DC2626]">
+                  <dt className="font-medium flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Redeemed At
+                  </dt>
+                  <dd className="font-bold">{formatDate(selectedReward.redeemed_at)}</dd>
                 </div>
               )}
-            </div>
+            </dl>
 
             {redeemError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-[#DC2626] rounded-xl text-xs font-semibold flex items-center gap-2">
+              <div role="alert" className="p-3 bg-red-50 border border-red-200 text-[#DC2626] rounded-xl text-sm font-semibold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{redeemError}</span>
               </div>
@@ -395,16 +463,18 @@ export default function MerchantDashboardPage() {
                 {!confirmingRedeem ? (
                   <button
                     onClick={() => setConfirmingRedeem(true)}
-                    className="w-full bg-[#16A34A] hover:bg-emerald-700 active:scale-[0.98] text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition-all text-base flex items-center justify-center gap-2"
+                    style={primary3d}
+                    className="bv-btn3d w-full min-h-[60px] text-white font-bold px-6 rounded-[20px] text-[17px] flex items-center justify-center gap-2 hover:brightness-110"
                   >
+                    <BadgeCheck className="w-5 h-5" />
                     <span>REDEEM {selectedReward.discount_percentage}%</span>
                   </button>
                 ) : (
-                  <div className="space-y-3 bg-amber-50 border border-amber-200 p-4 rounded-2xl">
+                  <div className="space-y-3 bg-amber-50 border border-amber-200 p-4 rounded-2xl animate-fadeIn">
                     <p className="text-center font-bold text-amber-900 text-sm">
                       Redeem Card #{formatSerialNumber(selectedReward.serial_number)}?
                     </p>
-                    <p className="text-center text-xs text-amber-700">
+                    <p className="text-center text-xs text-amber-800">
                       This action will change card status to USED. This cannot be undone.
                     </p>
 
@@ -412,14 +482,15 @@ export default function MerchantDashboardPage() {
                       <button
                         onClick={() => setConfirmingRedeem(false)}
                         disabled={redeeming}
-                        className="flex-1 bg-white hover:bg-slate-100 text-[#0F172A] font-semibold py-3 px-4 rounded-xl border border-slate-300 text-sm"
+                        className="flex-1 min-h-[48px] bg-white hover:bg-slate-50 text-[#0F172A] font-semibold px-4 rounded-xl border border-slate-300 text-sm transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleConfirmRedeem}
                         disabled={redeeming}
-                        className="flex-1 bg-[#16A34A] hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-sm shadow flex items-center justify-center gap-2 disabled:opacity-75"
+                        style={primary3d}
+                        className="bv-btn3d flex-1 min-h-[48px] text-white font-bold px-4 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-75"
                       >
                         {redeeming ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -440,12 +511,9 @@ export default function MerchantDashboardPage() {
             )}
 
             <button
-              onClick={() => {
-                setSelectedReward(null);
-                setConfirmingRedeem(false);
-                setRedeemError(null);
-              }}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-semibold py-3 rounded-2xl text-sm transition-all"
+              onClick={closeModal}
+              disabled={redeeming}
+              className="w-full min-h-[48px] bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-semibold rounded-2xl text-sm transition-all"
             >
               Close
             </button>

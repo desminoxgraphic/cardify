@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Gift, RefreshCw } from 'lucide-react';
+import { Loader2, Gift, RefreshCw, AlertCircle } from 'lucide-react';
+import { AdminShell, adminCard, adminSecondaryButton } from '@/components/admin/AdminShell';
 import { Business, Reward } from '@/lib/types';
 import { formatSerialNumber, formatDate } from '@/lib/utils';
 
@@ -79,163 +80,150 @@ export default function BusinessRewardsAdminPage() {
     }
   };
 
+  const refreshButton = (
+    <button onClick={fetchData} className={adminSecondaryButton} title="Refresh List">
+      <RefreshCw className="w-4 h-4" />
+      <span>Refresh</span>
+    </button>
+  );
+
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3 text-[#64748B]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
-          <span className="text-sm font-medium">Loading store rewards...</span>
+      <AdminShell title="Rewards" backHref="/admin">
+        <div className={`${adminCard} p-4 space-y-3`} aria-busy="true">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="h-16 rounded-2xl bg-slate-100 animate-pulse" />)}
         </div>
-      </div>
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-[#64748B]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" /> Loading store rewards...
+        </p>
+      </AdminShell>
     );
   }
 
   if (error || !business) {
     return (
-      <div className="min-h-dvh flex items-center justify-center p-4 bg-[#F8FAFC]">
-        <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-md border border-[#E2E8F0] text-center">
-          <h1 className="text-xl font-bold text-[#0F172A] mb-2">Error</h1>
-          <p className="text-sm text-[#64748B]">{error || 'Store not found.'}</p>
+      <AdminShell title="Error" backHref="/admin">
+        <div className={`${adminCard} p-10 text-center`}>
+          <div className="mx-auto w-16 h-16 rounded-[20px] bg-red-50 text-[#DC2626] flex items-center justify-center">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <p className="mt-4 text-sm text-[#64748B]">{error || 'Store not found.'}</p>
+          <Link href="/admin" className={`${adminSecondaryButton} mt-6`}>Back to businesses</Link>
         </div>
-      </div>
+      </AdminShell>
     );
   }
 
+  const filters: { key: 'ALL' | 'ACTIVE' | 'USED'; label: string; count: number }[] = [
+    { key: 'ALL', label: 'All', count: rewards.length },
+    { key: 'ACTIVE', label: 'Active', count: rewards.filter((r) => r.status === 'ACTIVE').length },
+    { key: 'USED', label: 'Used', count: rewards.filter((r) => r.status === 'USED').length },
+  ];
+
+  const statusButton = (reward: Reward) => (
+    <button
+      onClick={() => handleMarkUsed(reward)}
+      disabled={updatingId === reward.id || reward.status === 'USED'}
+      className={`min-h-[36px] px-3 rounded-full text-xs font-bold border transition-colors inline-flex items-center gap-1.5 shrink-0 ${
+        reward.status === 'ACTIVE'
+          ? 'bg-emerald-50 text-[#15803D] border-emerald-200 hover:bg-emerald-100'
+          : 'bg-slate-100 text-[#64748B] border-[#E2E8F0] cursor-default'
+      }`}
+      title={reward.status === 'ACTIVE' ? 'Mark reward as used' : 'Used rewards cannot be reactivated'}
+    >
+      {updatingId === reward.id ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <>
+          <span className={`w-1.5 h-1.5 rounded-full ${reward.status === 'ACTIVE' ? 'bg-[#16A34A]' : 'bg-[#94A3B8]'}`} />
+          <span>{reward.status}</span>
+        </>
+      )}
+    </button>
+  );
+
   return (
-    <div className="min-h-dvh bg-[#F8FAFC]">
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin"
-              className="p-2 hover:bg-slate-100 rounded-xl transition-all text-[#0F172A]"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg font-bold text-[#0F172A] leading-tight">
-                {business.name} — Rewards
-              </h1>
-              <p className="text-xs text-[#64748B]">Sequence Serial Log & Overrides</p>
-            </div>
-          </div>
-
+    <AdminShell title={`${business.name} — Rewards`} subtitle="Every reward card issued for this store." backHref="/admin" actions={refreshButton}>
+      {/* FILTER BAR */}
+      <div className="inline-flex p-1 rounded-2xl bg-white border border-[#E2E8F0] shadow-sm mb-5" role="tablist" aria-label="Filter rewards">
+        {filters.map((f) => (
           <button
-            onClick={fetchData}
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl transition-all"
-            title="Refresh List"
+            key={f.key}
+            role="tab"
+            aria-selected={filter === f.key}
+            onClick={() => setFilter(f.key)}
+            className={`min-h-[40px] px-4 rounded-xl text-sm font-bold transition-all ${
+              filter === f.key ? 'bg-[#0B1120] text-white shadow-[0_2px_0_rgba(0,0,0,0.3)]' : 'text-[#64748B] hover:text-[#0F172A]'
+            }`}
           >
-            <RefreshCw className="w-4 h-4" />
+            {f.label} <span className="opacity-60 tabular-nums">({f.count})</span>
           </button>
-        </div>
-      </header>
+        ))}
+      </div>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* FILTER BAR */}
-        <div className="flex items-center justify-between bg-white p-2 rounded-2xl border border-[#E2E8F0] shadow-sm">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setFilter('ALL')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                filter === 'ALL'
-                  ? 'bg-[#0F172A] text-white'
-                  : 'text-[#64748B] hover:bg-slate-100'
-              }`}
-            >
-              All ({rewards.length})
-            </button>
-            <button
-              onClick={() => setFilter('ACTIVE')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                filter === 'ACTIVE'
-                  ? 'bg-[#16A34A] text-white'
-                  : 'text-[#64748B] hover:bg-slate-100'
-              }`}
-            >
-              Active ({rewards.filter((r) => r.status === 'ACTIVE').length})
-            </button>
-            <button
-              onClick={() => setFilter('USED')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                filter === 'USED'
-                  ? 'bg-[#DC2626] text-white'
-                  : 'text-[#64748B] hover:bg-slate-100'
-              }`}
-            >
-              Used ({rewards.filter((r) => r.status === 'USED').length})
-            </button>
+      {filteredRewards.length === 0 ? (
+        <div className={`${adminCard} p-12 text-center`}>
+          <div className="mx-auto w-16 h-16 rounded-[20px] bg-gradient-to-b from-blue-50 to-blue-100 text-[#2563EB] flex items-center justify-center">
+            <Gift className="w-7 h-7" />
           </div>
+          <p className="mt-4 text-base font-extrabold">No rewards found</p>
+          <p className="text-sm text-[#64748B] mt-1">No customer rewards generated matching this filter.</p>
         </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className={`${adminCard} hidden md:block overflow-hidden`}>
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8FAFC] text-[11px] uppercase tracking-wider text-[#64748B]">
+                <tr>
+                  <th className="text-start font-bold px-5 py-3">Card</th>
+                  <th className="text-start font-bold px-5 py-3">Customer</th>
+                  <th className="text-start font-bold px-5 py-3">Phone</th>
+                  <th className="text-start font-bold px-5 py-3">Created</th>
+                  <th className="text-start font-bold px-5 py-3">Redeemed</th>
+                  <th className="text-end font-bold px-5 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2E8F0]">
+                {filteredRewards.map((reward) => (
+                  <tr key={reward.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="px-5 py-3.5 font-mono font-extrabold">#{formatSerialNumber(reward.serial_number)}</td>
+                    <td className="px-5 py-3.5 font-bold">{reward.customer_name}</td>
+                    <td className="px-5 py-3.5 text-[#475569]">{reward.customer_phone}</td>
+                    <td className="px-5 py-3.5 text-[#475569]">{formatDate(reward.created_at)}</td>
+                    <td className="px-5 py-3.5 text-[#475569]">{reward.redeemed_at ? formatDate(reward.redeemed_at) : '—'}</td>
+                    <td className="px-5 py-3.5 text-end">{statusButton(reward)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* REWARDS TABLE / CARDS */}
-        <div className="space-y-3">
-          {filteredRewards.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 border border-[#E2E8F0] text-center text-[#64748B]">
-              <Gift className="w-12 h-12 text-[#64748B] mx-auto opacity-40 mb-2" />
-              <p className="text-base font-bold text-[#0F172A]">No rewards found</p>
-              <p className="text-xs text-[#64748B]">No customer rewards generated matching this filter.</p>
-            </div>
-          ) : (
-            filteredRewards.map((reward) => (
-              <div
-                key={reward.id}
-                className="bg-white rounded-2xl p-4 border border-[#E2E8F0] flex items-center justify-between shadow-sm"
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center font-mono font-extrabold text-sm border ${
-                      reward.status === 'USED'
-                        ? 'bg-red-50 text-[#DC2626] border-red-200'
-                        : 'bg-emerald-50 text-[#16A34A] border-emerald-200'
-                    }`}
-                  >
-                    <span className="text-[9px] font-sans font-semibold tracking-tighter opacity-70">
-                      NO.
+          {/* Mobile cards */}
+          <ul className="md:hidden space-y-2.5">
+            {filteredRewards.map((reward) => (
+              <li key={reward.id} className="bv-tile3d bg-white rounded-[20px] border border-[#E2E8F0] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`w-12 h-12 rounded-xl flex items-center justify-center font-mono font-extrabold text-sm shrink-0 ${reward.status === 'USED' ? 'bg-slate-100 text-[#64748B]' : 'bg-blue-50 text-[#1D4ED8]'}`}>
+                      #{formatSerialNumber(reward.serial_number)}
                     </span>
-                    <span>#{formatSerialNumber(reward.serial_number)}</span>
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold text-[#0F172A] text-base leading-tight">
-                      {reward.customer_name}
-                    </h3>
-                    <p className="text-xs text-[#64748B] mt-0.5 font-medium">
-                      {reward.customer_phone}
-                    </p>
-                    <div className="text-[11px] text-[#64748B] mt-1 flex items-center gap-3">
-                      <span>Created: {formatDate(reward.created_at)}</span>
-                      {reward.redeemed_at && (
-                        <span className="text-[#DC2626] font-semibold">
-                          Redeemed: {formatDate(reward.redeemed_at)}
-                        </span>
-                      )}
+                    <div className="min-w-0">
+                      <p className="font-bold truncate">{reward.customer_name}</p>
+                      <p className="text-xs text-[#64748B] truncate">{reward.customer_phone}</p>
                     </div>
                   </div>
+                  {statusButton(reward)}
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleMarkUsed(reward)}
-                    disabled={updatingId === reward.id || reward.status === 'USED'}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
-                      reward.status === 'ACTIVE'
-                        ? 'bg-emerald-50 text-[#16A34A] border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-red-50 text-[#DC2626] border-red-200 hover:bg-red-100'
-                    }`}
-                    title={reward.status === 'ACTIVE' ? 'Mark reward as used' : 'Used rewards cannot be reactivated'}
-                  >
-                    {updatingId === reward.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <span>{reward.status}</span>
-                    )}
-                  </button>
+                <div className="mt-3 pt-3 border-t border-[#E2E8F0] flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#64748B]">
+                  <span>Created: {formatDate(reward.created_at)}</span>
+                  {reward.redeemed_at && <span>Redeemed: {formatDate(reward.redeemed_at)}</span>}
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </main>
-    </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </AdminShell>
   );
 }

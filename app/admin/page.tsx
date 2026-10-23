@@ -8,16 +8,16 @@ import { Business } from '@/lib/types';
 import {
   Plus,
   ExternalLink,
-  Edit,
+  Pencil,
   Trash2,
   Copy,
   Check,
   Power,
   Store,
-  LogOut,
   Gift,
-  Loader2,
 } from 'lucide-react';
+import { AdminShell, AdminLoading, adminCard, adminPrimaryButton, adminSecondaryButton } from '@/components/admin/AdminShell';
+import { getBrandTheme } from '@/lib/brand-theme';
 
 interface BusinessWithStats extends Business {
   stats?: {
@@ -95,262 +95,192 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
-    router.push('/admin/login');
-  };
+  const addButton = (
+    <Link href="/admin/business/new" className={adminPrimaryButton}>
+      <Plus className="w-4 h-4" />
+      <span>Add Business</span>
+    </Link>
+  );
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-[#F8FAFC]">
-        <div className="flex flex-col items-center gap-3 text-[#64748B]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
-          <span className="text-sm font-medium">Loading admin panel...</span>
-        </div>
-      </div>
+      <AdminShell title="Businesses" subtitle="Manage registered local stores, custom URLs, and rewards." actions={addButton}>
+        <AdminLoading label="Loading admin panel..." />
+      </AdminShell>
     );
   }
 
+  const totals = businesses.reduce(
+    (acc, b) => ({
+      active: acc.active + (b.is_active ? 1 : 0),
+      rewards: acc.rewards + (b.stats?.total || 0),
+      redeemed: acc.redeemed + (b.stats?.used || 0),
+    }),
+    { active: 0, rewards: 0, redeemed: 0 }
+  );
+
   return (
-    <div className="min-h-dvh bg-[#F8FAFC]">
-      {/* ADMIN HEADER */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/boostov-logo.png" alt="boostov.ma logo" width={40} height={40} priority />
-            <div>
-              <h1 className="text-lg font-bold text-[#0F172A] leading-tight">boostov.ma Admin</h1>
-              <p className="text-xs text-[#64748B]">Businesses & NFC Management</p>
+    <AdminShell
+      title={`Local Businesses (${businesses.length})`}
+      subtitle="Manage registered local stores, custom URLs, and rewards."
+      actions={addButton}
+    >
+      {error && (
+        <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 text-[#DC2626] rounded-2xl text-sm font-semibold">
+          {error}
+        </div>
+      )}
+
+      {!error && businesses.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: 'Businesses', value: businesses.length, icon: Store, tone: 'text-[#2563EB] bg-blue-50' },
+            { label: 'Active', value: totals.active, icon: Power, tone: 'text-[#16A34A] bg-emerald-50' },
+            { label: 'Rewards created', value: totals.rewards, icon: Gift, tone: 'text-[#7C3AED] bg-violet-50' },
+            { label: 'Redeemed', value: totals.redeemed, icon: Check, tone: 'text-[#EA580C] bg-orange-50' },
+          ].map(({ label, value, icon: Icon, tone }) => (
+            <div key={label} className={`${adminCard} p-4`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#64748B]">{label}</span>
+                <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${tone}`}>
+                  <Icon className="w-4 h-4" />
+                </span>
+              </div>
+              <p className="text-[28px] font-extrabold tracking-tight mt-1 tabular-nums">{value}</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/business/new"
-              className="bg-[#2563EB] hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-xl shadow transition-all flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Business</span>
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className="bg-slate-100 hover:bg-slate-200 text-[#0F172A] p-2 rounded-xl transition-all"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          ))}
         </div>
-      </header>
+      )}
 
-      {/* MAIN CONTAINER */}
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-black text-[#0F172A] tracking-tight">
-              Local Businesses ({businesses.length})
-            </h2>
-            <p className="text-sm text-[#64748B]">
-              Manage registered local stores, custom URLs, and rewards.
-            </p>
+      {!error && businesses.length === 0 ? (
+        <div className={`${adminCard} p-10 sm:p-14 text-center`}>
+          <div className="mx-auto w-20 h-20 rounded-[24px] bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center shadow-[0_3px_0_rgba(37,99,235,0.15)]">
+            <Store className="w-9 h-9 text-[#2563EB]" strokeWidth={1.6} />
           </div>
+          <h3 className="mt-5 text-xl font-extrabold">No businesses added yet</h3>
+          <p className="mt-1.5 text-sm text-[#64748B]">Add your first local store to start creating NFC links.</p>
+          <Link href="/admin/business/new" className={`${adminPrimaryButton} mt-6`}>
+            <Plus className="w-4 h-4" /> Add New Business
+          </Link>
         </div>
+      ) : !error ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {businesses.map((b) => {
+            const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/s/${b.slug}` : `/s/${b.slug}`;
+            const merchantUrl = typeof window !== 'undefined' ? `${window.location.origin}/m/${b.merchant_token}` : `/m/${b.merchant_token}`;
+            const theme = getBrandTheme(b.primary_color);
 
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 text-[#DC2626] rounded-2xl text-sm font-semibold">
-            {error}
-          </div>
-        )}
-
-        {!error && businesses.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 border border-[#E2E8F0] text-center space-y-4">
-            <Store className="w-12 h-12 text-[#64748B] mx-auto opacity-50" />
-            <h3 className="text-lg font-bold text-[#0F172A]">No businesses added yet</h3>
-            <p className="text-sm text-[#64748B]">Add your first local store to start creating NFC links.</p>
-            <Link
-              href="/admin/business/new"
-              className="inline-flex items-center gap-2 bg-[#2563EB] text-white font-semibold py-2.5 px-5 rounded-xl shadow"
-            >
-              <Plus className="w-4 h-4" /> Add New Business
-            </Link>
-          </div>
-        ) : !error ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {businesses.map((b) => {
-              const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/s/${b.slug}` : `/s/${b.slug}`;
-              const merchantUrl = typeof window !== 'undefined' ? `${window.location.origin}/m/${b.merchant_token}` : `/m/${b.merchant_token}`;
-
-              return (
+            return (
+              <article
+                key={b.id}
+                className={`${adminCard} overflow-hidden flex flex-col transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)] ${!b.is_active ? 'opacity-75' : ''}`}
+              >
+                {/* Brand band */}
                 <div
-                  key={b.id}
-                  className={`bg-white rounded-3xl p-6 border shadow-sm flex flex-col justify-between space-y-5 transition-all hover:shadow-lg hover:-translate-y-0.5 ${
-                    !b.is_active ? 'opacity-60 bg-slate-50 border-slate-200' : 'border-[#E2E8F0]'
-                  }`}
+                  className="relative h-20 overflow-hidden"
+                  style={{ background: b.is_active ? `linear-gradient(140deg, ${theme.deep}, ${theme.dark})` : 'linear-gradient(140deg, #94A3B8, #475569)' }}
                 >
-                  {/* TOP HEADER ROW */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className="w-12 h-12 rounded-2xl p-1 flex items-center justify-center overflow-hidden border shadow-sm"
-                        style={{ borderColor: b.primary_color || '#2563EB' }}
-                      >
-                        {b.logo_url ? (
-                          <Image
-                            src={b.logo_url}
-                            alt={b.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-contain rounded-xl"
-                          />
-                        ) : (
-                          <span className="font-bold text-lg text-[#2563EB]">
-                            {b.name.charAt(0)}
-                          </span>
-                        )}
-                      </div>
+                  <svg aria-hidden className="absolute -right-10 -top-14 w-48 h-48 opacity-20" viewBox="0 0 200 200" fill="none" stroke="white" strokeWidth="2">
+                    {[40, 65, 90].map((r) => <circle key={r} cx="100" cy="100" r={r} />)}
+                  </svg>
+                  <button
+                    onClick={() => handleToggleActive(b)}
+                    className="absolute top-3 end-3 bv-glass min-h-[32px] px-3 rounded-full text-xs font-bold text-white flex items-center gap-1.5 hover:bg-white/25 transition-colors"
+                    title={b.is_active ? 'Click to Disable' : 'Click to Enable'}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${b.is_active ? 'bg-[#4ADE80]' : 'bg-white/60'}`} />
+                    {b.is_active ? 'Active' : 'Disabled'}
+                  </button>
+                </div>
 
-                      <div>
-                        <h3 className="text-lg font-extrabold text-[#0F172A] leading-tight">
-                          {b.name}
-                        </h3>
-                        <p className="text-xs text-[#64748B] font-mono mt-0.5">/s/{b.slug}</p>
-                      </div>
+                <div className="relative px-5 pb-5 -mt-8 flex-1 flex flex-col">
+                  <div className="flex items-end gap-3">
+                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-b from-white to-slate-100 p-1 shadow-[0_3px_0_rgba(15,23,42,0.08),0_12px_24px_-12px_rgba(15,23,42,0.45)] ring-4 ring-white overflow-hidden shrink-0 flex items-center justify-center">
+                      {b.logo_url ? (
+                        <Image src={b.logo_url} alt={b.name} width={64} height={64} className="w-full h-full object-contain rounded-[16px]" />
+                      ) : (
+                        <span className="w-full h-full rounded-[16px] flex items-center justify-center font-extrabold text-xl text-white" style={{ background: theme.deep }}>
+                          {b.name.charAt(0)}
+                        </span>
+                      )}
                     </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleToggleActive(b)}
-                        className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
-                          b.is_active
-                            ? 'bg-emerald-50 text-[#16A34A] border-emerald-200 hover:bg-emerald-100'
-                            : 'bg-red-50 text-[#DC2626] border-red-200 hover:bg-red-100'
-                        }`}
-                        title={b.is_active ? 'Click to Disable' : 'Click to Enable'}
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        <span>{b.is_active ? 'Active' : 'Disabled'}</span>
-                      </button>
+                    <div className="min-w-0 pb-0.5">
+                      <h3 className="text-lg font-extrabold leading-tight truncate">{b.name}</h3>
+                      <p className="text-xs text-[#64748B] font-mono truncate">/s/{b.slug}</p>
                     </div>
                   </div>
 
-                  {/* STATS BADGES */}
-                  <div className="grid grid-cols-3 gap-2 bg-[#F8FAFC] p-3 rounded-2xl border border-[#E2E8F0] text-center">
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[#64748B]">Total</div>
-                      <div className="text-base font-extrabold text-[#0F172A]">
-                        {b.stats?.total || 0}
+                  {/* Stats */}
+                  <dl className="mt-4 grid grid-cols-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] divide-x divide-[#E2E8F0] text-center rtl:divide-x-reverse">
+                    {[
+                      ['Total', b.stats?.total || 0, 'text-[#0F172A]'],
+                      ['Active', b.stats?.active || 0, 'text-[#16A34A]'],
+                      ['Used', b.stats?.used || 0, 'text-[#64748B]'],
+                    ].map(([label, value, tone]) => (
+                      <div key={label as string} className="py-2.5">
+                        <dt className="text-[10px] uppercase font-bold tracking-wider text-[#64748B]">{label}</dt>
+                        <dd className={`text-lg font-extrabold tabular-nums ${tone}`}>{value}</dd>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[#16A34A]">Active</div>
-                      <div className="text-base font-extrabold text-[#16A34A]">
-                        {b.stats?.active || 0}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-[#DC2626]">Used</div>
-                      <div className="text-base font-extrabold text-[#DC2626]">
-                        {b.stats?.used || 0}
-                      </div>
-                    </div>
-                  </div>
+                    ))}
+                  </dl>
 
-                  {/* LINKS & URL COPIERS */}
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                      <div className="truncate mr-2">
-                        <span className="font-bold text-[#0F172A]">NFC URL: </span>
-                        <span className="text-[#64748B] font-mono">{publicUrl}</span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                  {/* Links */}
+                  <div className="mt-4 space-y-2">
+                    {[
+                      { key: `pub_${b.id}`, label: 'NFC URL', display: publicUrl, copy: publicUrl, href: `/s/${b.slug}`, copyTitle: 'Copy Public NFC URL', openTitle: 'Open Public Page' },
+                      { key: `mer_${b.id}`, label: 'Merchant Link', display: `/m/${b.merchant_token.substring(0, 10)}...`, copy: merchantUrl, href: `/m/${b.merchant_token}`, copyTitle: 'Copy Merchant Link', openTitle: 'Open Merchant Portal' },
+                    ].map((link) => (
+                      <div key={link.key} className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] ps-3 pe-1.5 py-1.5">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">{link.label}</p>
+                          <p className="text-xs font-mono text-[#0F172A] truncate">{link.display}</p>
+                        </div>
                         <button
-                          onClick={() => handleCopy(publicUrl, `pub_${b.id}`)}
-                          className="p-1.5 hover:bg-white rounded-lg border border-slate-300 transition-all text-[#0F172A]"
-                          title="Copy Public NFC URL"
+                          onClick={() => handleCopy(link.copy, link.key)}
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-[#0F172A] hover:bg-slate-100 transition-colors"
+                          title={link.copyTitle}
+                          aria-label={link.copyTitle}
                         >
-                          {copiedLink === `pub_${b.id}` ? (
-                            <Check className="w-3.5 h-3.5 text-[#16A34A]" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
+                          {copiedLink === link.key ? <Check className="w-4 h-4 text-[#16A34A]" /> : <Copy className="w-4 h-4" />}
                         </button>
                         <a
-                          href={`/s/${b.slug}`}
+                          href={link.href}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 hover:bg-white rounded-lg border border-slate-300 transition-all text-[#2563EB]"
-                          title="Open Public Page"
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-[#2563EB] hover:bg-blue-50 transition-colors"
+                          title={link.openTitle}
+                          aria-label={link.openTitle}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ExternalLink className="w-4 h-4" />
                         </a>
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                      <div className="truncate mr-2">
-                        <span className="font-bold text-[#0F172A]">Merchant Link: </span>
-                        <span className="text-[#64748B] font-mono">/m/{b.merchant_token.substring(0, 10)}...</span>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleCopy(merchantUrl, `mer_${b.id}`)}
-                          className="p-1.5 hover:bg-white rounded-lg border border-slate-300 transition-all text-[#0F172A]"
-                          title="Copy Merchant Link"
-                        >
-                          {copiedLink === `mer_${b.id}` ? (
-                            <Check className="w-3.5 h-3.5 text-[#16A34A]" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                        <a
-                          href={`/m/${b.merchant_token}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 hover:bg-white rounded-lg border border-slate-300 transition-all text-[#0F172A]"
-                          title="Open Merchant Portal"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
-                  {/* BOTTOM ACTION BUTTONS */}
-                  <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
-                    <Link
-                      href={`/admin/business/${b.id}/rewards`}
-                      className="bg-slate-100 hover:bg-slate-200 text-[#0F172A] px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
-                    >
-                      <Gift className="w-3.5 h-3.5 text-[#2563EB]" />
+                  {/* Actions */}
+                  <div className="mt-auto pt-4 flex items-center gap-2">
+                    <Link href={`/admin/business/${b.id}/rewards`} className={`${adminSecondaryButton} flex-1`}>
+                      <Gift className="w-4 h-4 text-[#2563EB]" />
                       <span>View Rewards</span>
                     </Link>
-
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/business/${b.id}`}
-                        className="p-2 bg-slate-100 hover:bg-slate-200 text-[#0F172A] rounded-xl transition-all"
-                        title="Edit Business"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Link>
-
-                      <button
-                        onClick={() => handleDelete(b)}
-                        className="p-2 bg-red-50 hover:bg-red-100 text-[#DC2626] rounded-xl transition-all border border-red-200"
-                        title="Delete Business"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <Link href={`/admin/business/${b.id}`} className={`${adminSecondaryButton} w-11 px-0`} title="Edit Business" aria-label="Edit Business">
+                      <Pencil className="w-4 h-4" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(b)}
+                      className="w-11 min-h-[44px] rounded-xl flex items-center justify-center text-[#DC2626] bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
+                      title="Delete Business"
+                      aria-label="Delete Business"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : null}
-      </main>
-    </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+    </AdminShell>
   );
 }
