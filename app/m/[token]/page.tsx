@@ -148,8 +148,8 @@ export default function MerchantDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[#F8FAFC]" aria-busy="true">
-        <div className="bg-white border-b border-[#E2E8F0]">
+      <div className="min-h-dvh bg-ivory-50" aria-busy="true">
+        <div className="bg-white border-b border-ink-200">
           <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-slate-200 animate-pulse" />
             <div className="space-y-2">
@@ -160,12 +160,12 @@ export default function MerchantDashboardPage() {
         </div>
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
           <div className="grid grid-cols-3 gap-3">
-            {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />)}
+            {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-ink-200 animate-pulse" />)}
           </div>
-          <div className="h-14 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />
-          {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-[#E2E8F0] animate-pulse" />)}
-          <p className="flex items-center justify-center gap-2 pt-2 text-sm font-medium text-[#64748B]">
-            <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" /> Loading merchant portal...
+          <div className="h-14 rounded-2xl bg-white border border-ink-200 animate-pulse" />
+          {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-2xl bg-white border border-ink-200 animate-pulse" />)}
+          <p className="flex items-center justify-center gap-2 pt-2 text-sm font-medium text-ink-500">
+            <Loader2 className="w-4 h-4 animate-spin text-gold-700" /> Loading merchant portal...
           </p>
         </div>
       </div>
@@ -174,18 +174,18 @@ export default function MerchantDashboardPage() {
 
   if (error || !business) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-[#F8FAFC]">
-        <div className="w-full max-w-md bg-white rounded-[28px] p-8 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.25)] border border-[#E2E8F0] text-center animate-scaleUp">
-          <div className="w-16 h-16 bg-red-50 text-[#DC2626] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-ivory-50">
+        <div className="w-full max-w-md bg-white rounded-[28px] p-8 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.25)] border border-ink-200 text-center animate-scaleUp">
+          <div className="w-16 h-16 bg-red-50 text-danger-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h1 className="text-xl font-extrabold text-[#0F172A] mb-2 tracking-tight">Access Denied</h1>
-          <p className="text-sm text-[#64748B]">{error || 'Invalid merchant link.'}</p>
+          <h1 className="text-xl font-extrabold text-ink-950 mb-2 tracking-tight">Access Denied</h1>
+          <p className="text-sm text-ink-500">{error || 'Invalid merchant link.'}</p>
         </div>
-        <p className="mt-6 inline-flex items-center gap-1.5 text-xs font-medium text-[#64748B]">
+        <p className="mt-6 inline-flex items-center gap-1.5 text-xs font-medium text-ink-500">
           Powered by
           <Image src="/boostov-logo.png" alt="" width={16} height={16} />
-          <span className="font-bold text-[#0F172A]">boostov<span className="text-[#2563EB]">.ma</span></span>
+          <span className="font-bold text-ink-950">boostov<span className="text-gold-700">.ma</span></span>
         </p>
       </div>
     );
@@ -205,7 +205,7 @@ export default function MerchantDashboardPage() {
   } as React.CSSProperties;
 
   return (
-    <div className="relative min-h-dvh bg-[#F1F5F9] overflow-x-hidden">
+    <div className="relative min-h-dvh bg-ivory-100 overflow-x-hidden">
       {/* BRAND STAGE HEADER */}
       <header
         className="relative overflow-hidden text-white"
@@ -259,7 +259,7 @@ export default function MerchantDashboardPage() {
       <main className="relative -mt-8 max-w-2xl mx-auto bg-white rounded-t-[32px] sm:rounded-[32px] sm:mb-8 px-4 sm:px-6 pt-6 pb-8 space-y-5 shadow-[0_-24px_48px_-28px_rgba(15,23,42,0.5)] min-h-[60dvh] bv-sheet-up">
         {/* Success Alert */}
         {redeemSuccess && (
-          <div role="status" className="p-4 bg-emerald-50 border border-emerald-200 text-[#15803D] rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">
+          <div role="status" className="p-4 bg-emerald-50 border border-emerald-200 text-success-700 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">
             <CheckCircle2 className="w-5 h-5 shrink-0" />
             <span>{redeemSuccess}</span>
           </div>
@@ -268,7 +268,7 @@ export default function MerchantDashboardPage() {
         {/* SEARCH BAR */}
         <div className="relative">
           <label htmlFor="merchant-search" className="sr-only">Search rewards</label>
-          <Search className="w-5 h-5 text-[#64748B] absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-5 h-5 text-ink-500 absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             id="merchant-search"
             type="text"
@@ -279,13 +279,13 @@ export default function MerchantDashboardPage() {
             autoComplete="off"
             inputMode="search"
             enterKeyHint="search"
-            className="w-full min-h-[56px] ps-12 pe-14 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[18px] text-[#0F172A] placeholder-[#94A3B8] text-base focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent shadow-sm transition-all"
+            className="w-full min-h-[56px] ps-12 pe-14 bg-ivory-50 border border-ink-200 rounded-[18px] text-ink-950 placeholder-ink-400 text-base focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent shadow-sm transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               aria-label="Clear search"
-              className="absolute end-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-[#64748B] hover:bg-slate-100 hover:text-[#0F172A] transition-colors"
+              className="absolute end-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center text-ink-500 hover:bg-slate-100 hover:text-ink-950 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -295,11 +295,11 @@ export default function MerchantDashboardPage() {
         {/* REWARDS LIST */}
         <section className="space-y-3" aria-label="Customer rewards">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-[#0F172A]">
-              Customer Rewards <span className="text-[#64748B] font-semibold">({filteredRewards.length})</span>
+            <h2 className="text-sm font-bold text-ink-950">
+              Customer Rewards <span className="text-ink-500 font-semibold">({filteredRewards.length})</span>
             </h2>
 
-            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-[#E2E8F0]" role="tablist" aria-label="Filter by status">
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-ink-200" role="tablist" aria-label="Filter by status">
               {filterOptions.map((option) => (
                 <button
                   key={option.key}
@@ -307,7 +307,7 @@ export default function MerchantDashboardPage() {
                   aria-selected={statusFilter === option.key}
                   onClick={() => setStatusFilter(option.key)}
                   className={`px-3 min-h-[36px] rounded-lg text-xs font-bold transition-all ${
-                    statusFilter === option.key ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B] hover:text-[#0F172A]'
+                    statusFilter === option.key ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500 hover:text-ink-950'
                   }`}
                 >
                   {option.label}
@@ -317,12 +317,12 @@ export default function MerchantDashboardPage() {
           </div>
 
           {filteredRewards.length === 0 ? (
-            <div className="bg-white rounded-3xl p-10 border border-dashed border-[#CBD5E1] text-center">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-[#64748B] flex items-center justify-center mx-auto mb-3">
+            <div className="bg-white rounded-3xl p-10 border border-dashed border-ink-300 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-ink-500 flex items-center justify-center mx-auto mb-3">
                 <Search className="w-5 h-5" />
               </div>
-              <p className="text-sm font-bold text-[#0F172A]">No rewards found</p>
-              <p className="text-xs text-[#64748B] mt-1">No rewards found matching your search.</p>
+              <p className="text-sm font-bold text-ink-950">No rewards found</p>
+              <p className="text-xs text-ink-500 mt-1">No rewards found matching your search.</p>
             </div>
           ) : (
             <ul className="space-y-2.5">
@@ -337,11 +337,11 @@ export default function MerchantDashboardPage() {
                         setConfirmingRedeem(false);
                         setRedeemError(null);
                       }}
-                      className="bv-tile3d w-full text-left bg-gradient-to-b from-white to-slate-50 rounded-[20px] p-3.5 border border-[#E2E8F0] transition-all hover:border-[#2563EB]/40 active:translate-y-px flex items-center gap-3"
+                      className="bv-tile3d w-full text-left bg-gradient-to-b from-white to-slate-50 rounded-[20px] p-3.5 border border-ink-200 transition-all hover:border-gold-400 active:translate-y-px flex items-center gap-3"
                     >
                       <div
                         className={`w-14 h-14 rounded-xl flex flex-col items-center justify-center font-mono font-extrabold text-sm border shrink-0 ${
-                          isUsed ? 'bg-slate-50 text-[#64748B] border-[#E2E8F0]' : 'bg-blue-50 text-[#1D4ED8] border-blue-100'
+                          isUsed ? 'bg-slate-50 text-ink-500 border-ink-200' : 'bg-gold-50 text-gold-800 border-gold-200'
                         }`}
                       >
                         <span className="text-[9px] font-sans font-bold tracking-wider opacity-70">NO.</span>
@@ -349,24 +349,24 @@ export default function MerchantDashboardPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h3 className={`font-bold text-[15px] leading-tight truncate ${isUsed ? 'text-[#64748B]' : 'text-[#0F172A]'}`}>
+                        <h3 className={`font-bold text-[15px] leading-tight truncate ${isUsed ? 'text-ink-500' : 'text-ink-950'}`}>
                           {reward.customer_name}
                         </h3>
-                        <p className="text-xs text-[#64748B] mt-0.5 font-medium truncate">{reward.customer_phone}</p>
-                        <p className="text-[11px] text-[#94A3B8] mt-0.5">{formatDate(reward.created_at)}</p>
+                        <p className="text-xs text-ink-500 mt-0.5 font-medium truncate">{reward.customer_phone}</p>
+                        <p className="text-[11px] text-ink-400 mt-0.5">{formatDate(reward.created_at)}</p>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         {isUsed ? (
-                          <span className="px-2.5 py-1 bg-slate-100 text-[#64748B] text-[11px] font-bold rounded-full border border-[#E2E8F0] uppercase tracking-wide whitespace-nowrap">
+                          <span className="px-2.5 py-1 bg-slate-100 text-ink-500 text-[11px] font-bold rounded-full border border-ink-200 uppercase tracking-wide whitespace-nowrap">
                             Used
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 bg-emerald-50 text-[#15803D] text-[11px] font-bold rounded-full border border-emerald-200 uppercase tracking-wide whitespace-nowrap">
+                          <span className="px-2.5 py-1 bg-emerald-50 text-success-700 text-[11px] font-bold rounded-full border border-emerald-200 uppercase tracking-wide whitespace-nowrap">
                             {reward.discount_percentage}% · Active
                           </span>
                         )}
-                        <ChevronRight className="w-4 h-4 text-[#CBD5E1]" />
+                        <ChevronRight className="w-4 h-4 text-ink-300" />
                       </div>
                     </button>
                   </li>
@@ -376,10 +376,10 @@ export default function MerchantDashboardPage() {
           )}
         </section>
 
-        <p className="pt-2 pb-4 flex items-center justify-center gap-1.5 text-xs font-medium text-[#64748B]">
+        <p className="pt-2 pb-4 flex items-center justify-center gap-1.5 text-xs font-medium text-ink-500">
           Powered by
           <Image src="/boostov-logo.png" alt="" width={16} height={16} />
-          <span className="font-bold text-[#0F172A]">boostov<span className="text-[#2563EB]">.ma</span></span>
+          <span className="font-bold text-ink-950">boostov<span className="text-gold-700">.ma</span></span>
         </p>
       </main>
 
@@ -395,24 +395,24 @@ export default function MerchantDashboardPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="reward-dialog-title"
-            className="bg-white rounded-t-[32px] sm:rounded-[32px] max-w-md w-full p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl border border-[#E2E8F0] space-y-5 animate-step-in max-h-[92dvh] overflow-y-auto overscroll-contain"
+            className="bg-white rounded-t-[32px] sm:rounded-[32px] max-w-md w-full p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl border border-ink-200 space-y-5 animate-step-in max-h-[92dvh] overflow-y-auto overscroll-contain"
           >
             <div className="mx-auto -mt-2 mb-1 h-1.5 w-10 rounded-full bg-slate-200 sm:hidden" aria-hidden />
             <div className="flex items-start justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-[#64748B] uppercase tracking-wider">Card Details</span>
-                <h2 id="reward-dialog-title" className="text-3xl font-black text-[#0F172A] font-mono mt-0.5">
+                <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">Card Details</span>
+                <h2 id="reward-dialog-title" className="text-3xl font-black text-ink-950 font-mono mt-0.5">
                   #{formatSerialNumber(selectedReward.serial_number)}
                 </h2>
               </div>
 
               <div className="flex items-center gap-2">
                 {selectedReward.status === 'USED' ? (
-                  <span className="px-3 py-1.5 bg-slate-100 text-[#64748B] text-xs font-extrabold rounded-full border border-[#E2E8F0] uppercase tracking-wider">
+                  <span className="px-3 py-1.5 bg-slate-100 text-ink-500 text-xs font-extrabold rounded-full border border-ink-200 uppercase tracking-wider">
                     USED
                   </span>
                 ) : (
-                  <span className="px-3 py-1.5 bg-emerald-50 text-[#15803D] text-xs font-extrabold rounded-full border border-emerald-200 uppercase tracking-wider">
+                  <span className="px-3 py-1.5 bg-emerald-50 text-success-700 text-xs font-extrabold rounded-full border border-emerald-200 uppercase tracking-wider">
                     ACTIVE
                   </span>
                 )}
@@ -420,28 +420,28 @@ export default function MerchantDashboardPage() {
                   onClick={closeModal}
                   disabled={redeeming}
                   aria-label="Close"
-                  className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-[#0F172A] transition-colors"
+                  className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-ink-950 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <dl className="divide-y divide-[#E2E8F0] bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] text-sm">
+            <dl className="divide-y divide-ink-200 bg-ivory-50 rounded-2xl border border-ink-200 text-sm">
               {[
-                ['Customer Name', selectedReward.customer_name, 'text-[#0F172A]'],
-                ['Phone Number', selectedReward.customer_phone, 'text-[#0F172A]'],
-                ['Discount Offer', `${selectedReward.discount_percentage}% OFF`, 'text-[#2563EB]'],
-                ['Created Date', formatDate(selectedReward.created_at), 'text-[#0F172A]'],
+                ['Customer Name', selectedReward.customer_name, 'text-ink-950'],
+                ['Phone Number', selectedReward.customer_phone, 'text-ink-950'],
+                ['Discount Offer', `${selectedReward.discount_percentage}% OFF`, 'text-gold-700'],
+                ['Created Date', formatDate(selectedReward.created_at), 'text-ink-950'],
               ].map(([label, value, tone]) => (
                 <div key={label} className="flex justify-between items-center gap-4 px-4 py-3">
-                  <dt className="text-[#64748B] font-medium">{label}</dt>
+                  <dt className="text-ink-500 font-medium">{label}</dt>
                   <dd className={`font-bold text-right ${tone}`}>{value}</dd>
                 </div>
               ))}
 
               {selectedReward.status === 'USED' && selectedReward.redeemed_at && (
-                <div className="flex justify-between items-center gap-4 px-4 py-3 text-[#DC2626]">
+                <div className="flex justify-between items-center gap-4 px-4 py-3 text-danger-600">
                   <dt className="font-medium flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" /> Redeemed At
                   </dt>
@@ -451,7 +451,7 @@ export default function MerchantDashboardPage() {
             </dl>
 
             {redeemError && (
-              <div role="alert" className="p-3 bg-red-50 border border-red-200 text-[#DC2626] rounded-xl text-sm font-semibold flex items-center gap-2">
+              <div role="alert" className="p-3 bg-red-50 border border-red-200 text-danger-600 rounded-xl text-sm font-semibold flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{redeemError}</span>
               </div>
@@ -482,7 +482,7 @@ export default function MerchantDashboardPage() {
                       <button
                         onClick={() => setConfirmingRedeem(false)}
                         disabled={redeeming}
-                        className="flex-1 min-h-[48px] bg-white hover:bg-slate-50 text-[#0F172A] font-semibold px-4 rounded-xl border border-slate-300 text-sm transition-colors"
+                        className="flex-1 min-h-[48px] bg-white hover:bg-slate-50 text-ink-950 font-semibold px-4 rounded-xl border border-slate-300 text-sm transition-colors"
                       >
                         Cancel
                       </button>
@@ -505,7 +505,7 @@ export default function MerchantDashboardPage() {
             )}
 
             {selectedReward.status === 'USED' && (
-              <div className="p-3 bg-red-50 text-[#DC2626] border border-red-200 rounded-2xl text-center text-xs font-bold uppercase tracking-wider">
+              <div className="p-3 bg-red-50 text-danger-600 border border-red-200 rounded-2xl text-center text-xs font-bold uppercase tracking-wider">
                 This card has already been used and cannot be redeemed twice.
               </div>
             )}
@@ -513,7 +513,7 @@ export default function MerchantDashboardPage() {
             <button
               onClick={closeModal}
               disabled={redeeming}
-              className="w-full min-h-[48px] bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-semibold rounded-2xl text-sm transition-all"
+              className="w-full min-h-[48px] bg-slate-100 hover:bg-slate-200 text-ink-950 font-semibold rounded-2xl text-sm transition-all"
             >
               Close
             </button>

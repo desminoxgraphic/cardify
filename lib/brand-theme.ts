@@ -55,6 +55,10 @@ export function withAlpha(hex: string, alpha: number): string {
  */
 export function getBrandTheme(value: string | null | undefined) {
   const base = normalizeHexColor(value);
+  const [hue, sat, lig] = rgbToHsl(toRgb(base));
+  // Neutral brands (black, greys) take the gold reward light; chromatic brands glow in their own hue.
+  const neutral = sat < 0.12 || lig < 0.06;
+  const glow = neutral ? '#F5C542' : hslToHex(hue, Math.max(sat, 0.7), 0.55);
   let deep = base;
   if (relativeLuminance(base) > 0.16) {
     let [h, s, l] = rgbToHsl(toRgb(base));
@@ -68,8 +72,12 @@ export function getBrandTheme(value: string | null | undefined) {
   }
   return {
     base,
+    neutral,
+    glow,
     deep,
-    dark: shade(deep, 0.42),
+    // For pure black, keep a hint of lift so panels are not flat #000
+    dark: neutral ? '#0B0B0C' : shade(deep, 0.42),
+    panel: neutral ? '#121214' : shade(deep, 0.78),
     light: toHex(toRgb(deep).map((c) => c + (255 - c) * 0.22) as [number, number, number]),
   };
 }

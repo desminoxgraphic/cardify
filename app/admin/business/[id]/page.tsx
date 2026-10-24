@@ -113,12 +113,12 @@ export default function EditBusinessPage() {
       <AdminShell title="Edit Business" backHref="/admin">
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6" aria-busy="true">
           <div className="space-y-5">
-            {[0, 1, 2].map((i) => <div key={i} className="h-48 rounded-[24px] bg-white border border-[#E2E8F0] animate-pulse" />)}
+            {[0, 1, 2].map((i) => <div key={i} className="h-48 rounded-[24px] bg-white border border-ink-200 animate-pulse" />)}
           </div>
           <div className="h-64 rounded-[24px] bg-slate-300 animate-pulse" />
         </div>
-        <p className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-[#64748B]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" /> Loading business details...
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-ink-500">
+          <Loader2 className="w-4 h-4 animate-spin text-gold-700" /> Loading business details...
         </p>
       </AdminShell>
     );

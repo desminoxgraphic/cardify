@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft, LayoutGrid, LogOut, Plus } from 'lucide-react';
+import { buttonClass } from '@/components/ui';
 
 interface AdminShellProps {
   title: string;
@@ -30,10 +31,10 @@ export function AdminShell({ title, subtitle, backHref, actions, children }: Adm
   };
 
   return (
-    <div className="min-h-dvh bg-[#F1F5F9] text-[#0F172A] lg:flex">
+    <div className="light-surface min-h-dvh bg-ivory-100 text-ink-950 lg:flex lg:items-stretch">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 sticky top-0 h-dvh bg-[#0B1120] text-white px-4 py-6 relative overflow-hidden">
-        <div aria-hidden className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-[#2563EB]/25 blur-3xl" />
+      <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 lg:sticky top-0 h-dvh self-start bg-ink-950 text-white px-4 py-6 relative overflow-hidden">
+        <div aria-hidden className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-gold-400/20 blur-3xl" />
         <Link href="/admin" className="relative flex items-center gap-2.5 px-2">
           <span className="w-10 h-10 rounded-[14px] bg-white flex items-center justify-center shadow-[0_3px_0_rgba(0,0,0,0.3)]">
             <Image src="/boostov-logo.png" alt="boostov.ma logo" width={30} height={30} priority />
@@ -53,7 +54,7 @@ export function AdminShell({ title, subtitle, backHref, actions, children }: Adm
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={`flex items-center gap-3 px-3 min-h-[44px] rounded-xl text-sm font-semibold transition-colors ${
-                  active ? 'bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' : 'text-white/60 hover:text-white hover:bg-white/5'
+                  active ? 'bg-white/10 text-gold-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-[18px] h-[18px]" />
@@ -73,9 +74,9 @@ export function AdminShell({ title, subtitle, backHref, actions, children }: Adm
 
       <div className="flex-1 min-w-0">
         {/* Mobile top bar */}
-        <header className="lg:hidden sticky top-0 z-30 bg-[#0B1120] text-white">
+        <header className="lg:hidden sticky top-0 z-30 bg-ink-950 text-white">
           <div className="flex items-center justify-between px-4 h-14">
-            <Link href="/admin" className="flex items-center gap-2">
+            <Link href="/admin" className="flex items-center gap-2 min-h-[44px]">
               <span className="w-8 h-8 rounded-[10px] bg-white flex items-center justify-center">
                 <Image src="/boostov-logo.png" alt="boostov.ma logo" width={24} height={24} priority />
               </span>
@@ -100,14 +101,14 @@ export function AdminShell({ title, subtitle, backHref, actions, children }: Adm
                 <Link
                   href={backHref}
                   aria-label="Back"
-                  className="bv-tile3d w-11 h-11 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center shrink-0 hover:bg-slate-50"
+                  className="bv-tile3d w-11 h-11 rounded-xl bg-white border border-ink-200 flex items-center justify-center shrink-0 hover:bg-slate-50"
                 >
                   <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
                 </Link>
               )}
               <div className="min-w-0">
-                <h1 className="text-[26px] sm:text-[30px] leading-tight font-extrabold tracking-[-0.02em] truncate">{title}</h1>
-                {subtitle && <p className="text-sm text-[#64748B] mt-1">{subtitle}</p>}
+                <h1 className="font-display text-[26px] sm:text-[32px] leading-tight font-extrabold tracking-[-0.02em] truncate" dir="auto">{title}</h1>
+                {subtitle && <p className="text-sm text-ink-500 mt-1">{subtitle}</p>}
               </div>
             </div>
             {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
@@ -119,15 +120,13 @@ export function AdminShell({ title, subtitle, backHref, actions, children }: Adm
   );
 }
 
-/** Shared admin button styles (3D edge, consistent sizes). */
-export const adminPrimaryButton =
-  'bv-btn3d inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white bg-gradient-to-b from-[#3B82F6] to-[#2563EB] hover:brightness-110 disabled:opacity-70 [--bv-edge:#1E3A8A] [--bv-glow:rgba(37,99,235,0.6)]';
-export const adminSecondaryButton =
-  'bv-tile3d inline-flex items-center justify-center gap-2 min-h-[44px] px-4 rounded-xl text-sm font-semibold text-[#0F172A] bg-white border border-[#E2E8F0] hover:bg-slate-50 transition-colors';
+/** Shared admin styles, built on the design-system primitives. */
+export const adminPrimaryButton = buttonClass('gold', 'md');
+export const adminSecondaryButton = buttonClass('outline', 'md');
 export const adminInput =
-  'w-full min-h-[46px] px-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition-all';
-export const adminLabel = 'block text-[13px] font-bold text-[#0F172A] mb-1.5';
-export const adminCard = 'bg-white rounded-[24px] border border-[#E2E8F0] shadow-[0_1px_0_rgba(15,23,42,0.04),0_12px_32px_-20px_rgba(15,23,42,0.25)]';
+  'w-full min-h-[46px] px-4 rounded-xl border border-ink-200 bg-ivory-50 text-sm text-ink-950 placeholder:text-ink-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent transition-all';
+export const adminLabel = 'block text-[13px] font-bold text-ink-950 mb-1.5';
+export const adminCard = 'bg-white rounded-[24px] border border-ink-200 shadow-[0_1px_0_rgba(15,23,42,0.04),0_12px_32px_-20px_rgba(15,23,42,0.25)]';
 
 export function AdminLoading({ label }: { label: string }) {
   return (
@@ -144,7 +143,7 @@ export function AdminLoading({ label }: { label: string }) {
           </div>
         ))}
       </div>
-      <p className="text-center text-sm font-medium text-[#64748B]">{label}</p>
+      <p className="text-center text-sm font-medium text-ink-500">{label}</p>
     </div>
   );
 }

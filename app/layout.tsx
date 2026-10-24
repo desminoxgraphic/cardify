@@ -1,11 +1,27 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, Poppins, Noto_Sans_Arabic } from 'next/font/google';
 import './globals.css';
 
 const sans = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
   display: 'swap',
   variable: '--font-sans',
+});
+
+const display = Poppins({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-display',
+});
+
+// Arabic fallback for merchant and customer names
+const arabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-arabic',
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://boostov.ma';
@@ -39,7 +55,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
-  themeColor: '#0B1120',
+  themeColor: '#0A0A0B',
 };
 
 export default function RootLayout({
@@ -48,10 +64,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={sans.variable}>
-      <body className="min-h-dvh bg-[#F8FAFC] text-[#0F172A] antialiased font-sans">
-        {children}
-      </body>
+    <html lang="en" className={`${sans.variable} ${display.variable} ${arabic.variable}`}>
+      <body className="min-h-dvh bg-ink-950 text-ink-900 antialiased font-sans">{children}</body>
     </html>
   );
 }

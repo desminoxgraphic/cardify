@@ -70,9 +70,9 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="relative min-h-dvh flex items-center justify-center p-4 bg-[#0B1120] overflow-hidden">
-      <div aria-hidden className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-[#2563EB]/30 blur-3xl" />
-      <div aria-hidden className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-[#0EA5E9]/20 blur-3xl" />
+    <div className="relative min-h-dvh flex items-center justify-center p-4 bg-ink-950 overflow-hidden">
+      <div aria-hidden className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full bg-gold-400/25 blur-3xl" />
+      <div aria-hidden className="absolute -bottom-40 -right-32 w-[480px] h-[480px] rounded-full bg-gold-600/10 blur-3xl" />
       <svg aria-hidden className="absolute -right-24 top-10 w-[460px] h-[460px] opacity-[0.08]" viewBox="0 0 200 200" fill="none" stroke="white" strokeWidth="1">
         {[30, 50, 70, 90].map((r) => <circle key={r} cx="100" cy="100" r={r} />)}
       </svg>
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
 
       <div className="relative w-full max-w-sm bv-sheet-up">
         <div className="text-center mb-7 text-white">
-          <span className="mx-auto w-[72px] h-[72px] rounded-[22px] bg-gradient-to-b from-white to-slate-200 flex items-center justify-center shadow-[0_4px_0_rgba(0,0,0,0.35),0_24px_40px_-14px_rgba(37,99,235,0.6)]">
+          <span className="mx-auto w-[72px] h-[72px] rounded-[22px] bg-gradient-to-b from-white to-slate-200 flex items-center justify-center shadow-[0_4px_0_rgba(0,0,0,0.35),0_24px_40px_-14px_rgba(245,197,66,0.45)]">
             <Image src="/boostov-logo.png" alt="boostov.ma logo" width={52} height={52} priority />
           </span>
           <h1 className="mt-5 text-[28px] font-extrabold tracking-[-0.02em]">boostov<span className="text-[#60A5FA]">.ma</span> Admin</h1>
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleLogin} className="bg-white rounded-[28px] p-6 sm:p-7 shadow-[0_30px_60px_-24px_rgba(0,0,0,0.7)] space-y-4">
           <div>
-            <label htmlFor="admin-password" className="block text-[13px] font-bold text-[#0F172A] mb-1.5">
+            <label htmlFor="admin-password" className="block text-[13px] font-bold text-ink-950 mb-1.5">
               Admin Password
             </label>
             <input
@@ -100,12 +100,12 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              className="w-full min-h-[52px] px-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
+              className="w-full min-h-[52px] px-4 rounded-2xl border border-ink-200 bg-ivory-50 text-ink-950 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent"
             />
           </div>
 
           {error && (
-            <div role="alert" className="p-3 bg-red-50 text-[#DC2626] border border-red-200 rounded-xl text-sm font-semibold text-center">
+            <div role="alert" className="p-3 bg-red-50 text-danger-600 border border-red-200 rounded-xl text-sm font-semibold text-center">
               {error}
             </div>
           )}
@@ -113,7 +113,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bv-btn3d w-full min-h-[54px] rounded-2xl text-base font-bold text-white bg-gradient-to-b from-[#3B82F6] to-[#2563EB] hover:brightness-110 flex items-center justify-center gap-2 disabled:opacity-75 [--bv-edge:#1E3A8A] [--bv-glow:rgba(37,99,235,0.6)]"
+            className="bv-btn3d w-full min-h-[54px] rounded-2xl text-base font-bold text-ink-950 bg-gold hover:brightness-105 flex items-center justify-center gap-2 disabled:opacity-75 [--bv-edge:#9A6A0E] [--bv-glow:rgba(245,197,66,0.55)]"
           >
             {loading ? (
               <>
