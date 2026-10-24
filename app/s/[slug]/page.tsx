@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { ArrowRight, Check, Loader2, Phone, Share2, Store, User, WifiOff, PenLine, Download } from 'lucide-react';
+import { ArrowRight, Check, Gift, Loader2, Phone, Share2, Star, Store, User, WifiOff, PenLine, Download } from 'lucide-react';
 import { RewardCard } from '@/components/RewardCard';
 import { RewardPreviewCard } from '@/components/RewardPreviewCard';
 import { SaveCardButton } from '@/components/SaveCardButton';
@@ -12,7 +12,7 @@ import { Star3D } from '@/components/Star3D';
 import { Symbol3D } from '@/components/Symbol3D';
 import { Button, Field, LogoTile } from '@/components/ui';
 import { ActionSheet, BannerFrame, Stage, StepNav, TicketSleeve, UnwrapReveal } from '@/components/experience/shell';
-import { GiftBox, Heart, Sparkle } from '@/components/experience/objects';
+import { GiftBox } from '@/components/experience/objects';
 import { StarRating } from '@/components/experience/StarRating';
 import { PublicBusiness, Reward } from '@/lib/types';
 import { getBrandTheme, withAlpha } from '@/lib/brand-theme';
@@ -338,29 +338,24 @@ export default function CustomerExperiencePage() {
         {step === 1 && (
           <>
             <section key="s1" className={`flex-1 flex flex-col justify-center px-5 pt-2 pb-7 short:pb-4 ${enter}`}>
-              <div className="relative">
-                {business.cover_image_url ? (
-                  <BannerFrame src={business.cover_image_url} alt={`${business.name} banner`} />
-                ) : (
-                  <div className="relative h-[clamp(140px,26svh,220px)] short:h-[clamp(110px,20svh,150px)] flex items-center justify-center">
-                    <div aria-hidden className="absolute w-[64%] aspect-square rounded-full" style={{ background: `radial-gradient(closest-side, ${withAlpha(theme.glow, 0.35)}, transparent)` }} />
-                    <Heart className="relative w-[clamp(104px,20svh,150px)] short:w-[clamp(84px,16svh,110px)]" />
-                    <Sparkle className="absolute top-[10%] end-[18%] w-9" delay="0.6s" />
-                    <Sparkle className="absolute bottom-[12%] start-[20%] w-6" delay="1.5s" />
-                  </div>
-                )}
-                <div className="absolute -bottom-8 start-4">
-                  <LogoTile src={business.logo_url} name={business.name} initials={initials} size="lg" className="short:w-16 short:h-16" />
+              {business.cover_image_url ? (
+                <BannerFrame src={business.cover_image_url} alt={`${business.name} banner`} />
+              ) : (
+                <div aria-hidden className="relative h-[clamp(120px,24svh,200px)] short:h-[clamp(96px,18svh,130px)] flex items-center justify-center">
+                  <div className="absolute w-[60%] aspect-square rounded-full" style={{ background: `radial-gradient(closest-side, ${withAlpha(theme.glow, 0.35)}, transparent)` }} />
+                  <LogoTile src={business.logo_url} name={business.name} initials={initials} size="xl" className="relative" />
                 </div>
-                {business.cover_image_url && <Heart className="absolute -bottom-[60px] end-2 w-12 short:w-10" />}
-              </div>
+              )}
 
-              <div className="mt-12 short:mt-10 bv-rise" style={{ animationDelay: '90ms' }}>
-                <p className="text-eyebrow uppercase text-gold-300">Thank you</p>
-                <h1 className="mt-2.5 font-display text-display-lg short:text-display-md text-balance break-words" dir="auto">
+              <div className="mt-7 short:mt-5 bv-rise" style={{ animationDelay: '90ms' }}>
+                <div className="flex items-center gap-3">
+                  {business.cover_image_url && <LogoTile src={business.logo_url} name={business.name} initials={initials} size="md" />}
+                  <p className="text-eyebrow uppercase text-gold-300">Thank you</p>
+                </div>
+                <h1 className="mt-4 short:mt-3 font-display text-display-lg short:text-display-md text-balance break-words">
                   Thanks for visiting <bdi className="text-gold">{business.name}</bdi>
                 </h1>
-                <p className="mt-2.5 text-base text-white/75">We appreciate your support.</p>
+                <p className="mt-2 text-base text-white/70">We appreciate your support.</p>
               </div>
             </section>
 
@@ -371,23 +366,24 @@ export default function CustomerExperiencePage() {
                 </Button>
               }
             >
-              <p className="text-eyebrow uppercase text-ink-400 mb-3 short:hidden">What happens next</p>
-              <ol className="grid grid-cols-3 gap-2.5">
+              {/* 3-step preview: one clean connected stepper */}
+              <ol className="relative grid grid-cols-3" aria-label="What happens next">
+                <span aria-hidden className="absolute top-[22px] inset-x-[16.6%] h-[2px] bg-ink-200" />
                 {[
-                  { kind: 'star' as const, title: 'Review', text: 'on Google Maps' },
-                  { kind: 'heart' as const, title: 'Share', text: 'with friends' },
-                  { kind: 'ticket' as const, title: `${business.discount_percentage}% OFF`, text: 'next visit' },
-                ].map((item, index) => (
-                  <li
-                    key={item.kind}
-                    className={`relative rounded-[20px] p-3 short:p-2 short:flex short:items-center short:gap-1.5 ${index === 2 ? 'bg-ink-950 text-white shadow-float' : 'bg-white shadow-lift'}`}
-                  >
-                    <span className={`absolute top-2.5 end-3 short:hidden text-[10px] font-extrabold ${index === 2 ? 'text-gold-300' : 'text-ink-300'}`}>0{index + 1}</span>
-                    <div className="w-11 h-11 short:w-7 short:h-7 -ms-0.5 shrink-0">
-                      <Symbol3D kind={item.kind} className="w-full h-auto" />
-                    </div>
-                    <p className={`mt-1.5 short:mt-0 text-[15px] short:text-[13px] font-extrabold leading-tight ${index === 2 ? 'text-gold' : ''}`}>{item.title}</p>
-                    <p className={`text-[11px] leading-snug short:hidden ${index === 2 ? 'text-white/65' : 'text-ink-500'}`}>{item.text}</p>
+                  { icon: <Star className="w-5 h-5" />, title: 'Review', text: 'on Google' },
+                  { icon: <Share2 className="w-5 h-5" />, title: 'Share', text: 'with friends' },
+                  { icon: <Gift className="w-5 h-5" />, title: `${business.discount_percentage}% OFF`, text: 'next visit', reward: true },
+                ].map((item) => (
+                  <li key={item.title} className="relative flex flex-col items-center text-center">
+                    <span
+                      className={`w-11 h-11 rounded-full flex items-center justify-center ring-4 ring-ivory-100 ${
+                        item.reward ? 'bg-gold text-ink-950 shadow-[0_6px_14px_-6px_rgba(200,144,26,0.8)]' : 'bg-ink-950 text-gold-300'
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
+                    <p className={`mt-2 text-[14px] font-extrabold leading-tight ${item.reward ? 'text-gold-700' : 'text-ink-950'}`}>{item.title}</p>
+                    <p className="text-[12px] text-ink-500 short:hidden">{item.text}</p>
                   </li>
                 ))}
               </ol>

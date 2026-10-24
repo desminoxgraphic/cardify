@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { IconButton, PoweredBy } from '@/components/ui';
@@ -93,28 +93,18 @@ export function ActionSheet({ children, footer }: { children?: React.ReactNode; 
   );
 }
 
-/**
- * Merchant banner shown whole (never cropped hard, never covered by text): the frame takes the
- * image's own aspect ratio, capped in height; very tall banners are letterboxed on a dark mat.
- */
-export function BannerFrame({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
-  const [ratio, setRatio] = useState<number | null>(null);
+/** Merchant banner shown whole at its own shape (never cropped, never covered), capped in height and centred. */
+export function BannerFrame({ src, alt }: { src: string; alt: string }) {
   return (
-    <div
-      className={`relative w-full overflow-hidden rounded-[24px] ring-1 ring-white/15 bg-ink-800 shadow-float short:[--banner-max:clamp(110px,21svh,150px)] ${className}`}
-      style={{ aspectRatio: ratio ? `${Math.max(ratio, 1.2)}` : '16 / 9', maxHeight: 'var(--banner-max, clamp(140px, 30svh, 260px))' }}
-    >
+    <div className="flex justify-center">
       <Image
         src={src}
         alt={alt}
-        fill
+        width={1200}
+        height={600}
         priority
         sizes="(max-width: 440px) 100vw, 440px"
-        className="object-contain"
-        onLoad={(e) => {
-          const img = e.currentTarget;
-          if (img.naturalWidth && img.naturalHeight) setRatio(img.naturalWidth / img.naturalHeight);
-        }}
+        className="w-auto h-auto max-w-full max-h-[clamp(140px,30svh,250px)] short:max-h-[clamp(110px,22svh,150px)] rounded-[20px] ring-1 ring-white/15 shadow-float"
       />
     </div>
   );
